@@ -19,9 +19,19 @@ Not included: publishing the draft, repository settings, host installs
 
 An approval covers only what the block lists.
 
-## 2. Where pushes run
+## 2. Where release actions run
 
-- A cloud connector may not be able to create tags (observed). Push from the owner's machine with their signed-in `git`/`gh`, in a fresh temporary clone with `core.autocrlf=false`.
+Observed 2026-10-08 (multi-agent-folder-cleanup v1.6.2 pilot): a cloud agent session could not create tags (git push dropped by the proxy; REST tag create 403), could not publish a draft (403 "editing releases not permitted"), and could not change repository settings. Expect the same split and say so before starting:
+
+| Action | Cloud agent session | Owner's machine |
+|---|---|---|
+| Build candidate, gate, open/merge PRs, read releases | usually works | works |
+| Push the tag | may be refused (observed) | signed-in `git` in a fresh temp clone, `core.autocrlf=false` |
+| Publish the draft (`gh release edit --draft=false`) | may be refused (observed) | signed-in `gh` |
+| Repository settings (branch protection, immutable releases) | refused (observed) | owner's browser or `gh`; may require the owner's **passkey ("sudo mode")** — the agent must stop and ask the owner to complete it; never ask for the credential |
+
+When a step is refused from the cloud, do not retry through another route; hand the owner the exact command and wait. The refusal changes where the step runs, never the approval for it.
+
 - Typical flow: feature PR (CI green) → merge → release PR with version bump (CI green) → merge → annotated tag on the merge commit.
 
 ```bash
@@ -32,7 +42,12 @@ git push origin v1.2.0
 ## 3. Draft created → verify
 
 1. Wait for the workflow. Confirm the release is a **draft** (`gh release view v1.2.0 --json isDraft`).
-2. Download every asset: `gh release download v1.2.0 --dir ../draft-1.2.0` (drafts need an authenticated `gh`).
+2. Download every asset: `gh release download v1.2.0 --dir ../draft-1.2.0` (drafts need an authenticated `gh`). `gh release download` uses GraphQL, which some proxies block (observed); fall back to REST per asset:
+
+   ```bash
+   gh api repos/<owner>/<repo>/releases --jq '.[] | select(.tag_name=="v1.2.0") | .assets[] | [.id, .name] | @tsv'
+   gh api -H "Accept: application/octet-stream" repos/<owner>/<repo>/releases/assets/<id> > ../draft-1.2.0/<name>
+   ```
 3. Save the draft's metadata. The `releases/tags/` endpoint returns published releases only, so select the draft from the list:
    `gh api repos/<owner>/<repo>/releases --jq '.[] | select(.tag_name=="v1.2.0")' > ../draft-1.2.0.json`
 4. Run:
@@ -53,6 +68,8 @@ Second approval block: version, asset list with hashes, verify result. On yes:
 ```bash
 gh release edit v1.2.0 --draft=false
 ```
+
+If the session's publish call is refused (observed from cloud: 403), the owner runs this exact command on their machine; the approval already given covers it unchanged.
 
 With immutable releases enabled in repository settings, assets and the tag are locked from this moment (documented behavior; confirm on the first release). Any later defect becomes a new patch version.
 
