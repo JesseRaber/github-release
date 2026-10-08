@@ -1,0 +1,6 @@
+# Copy to the repository root as .gitattributes.
+# LF everywhere so Windows and Linux builds produce identical package bytes.
+* text=auto eol=lf
+*.zip binary
+*.png binary
+*.jpg binary

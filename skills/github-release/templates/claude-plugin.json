@@ -1,0 +1,9 @@
+{
+  "name": "SKILL-NAME",
+  "version": "X.Y.Z",
+  "description": "One line.",
+  "author": {"name": "OWNER"},
+  "homepage": "https://github.com/OWNER/SKILL-NAME",
+  "repository": "https://github.com/OWNER/SKILL-NAME",
+  "license": "MIT"
+}

@@ -1,0 +1,23 @@
+{
+  "name": "SKILL-NAME",
+  "version": "X.Y.Z",
+  "description": "One line.",
+  "skills": "./skills/",
+  "author": {
+    "name": "OWNER"
+  },
+  "homepage": "https://github.com/OWNER/SKILL-NAME",
+  "repository": "https://github.com/OWNER/SKILL-NAME",
+  "license": "MIT",
+  "interface": {
+    "displayName": "SKILL TITLE",
+    "shortDescription": "One line",
+    "longDescription": "Two sentences.",
+    "developerName": "OWNER",
+    "category": "Productivity",
+    "capabilities": [
+      "..."
+    ],
+    "defaultPrompt": "Use $SKILL-NAME to ..."
+  }
+}

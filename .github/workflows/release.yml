@@ -1,0 +1,115 @@
+# Release workflow template from the github-release skill.
+# Copy to .github/workflows/release.yml. On a pushed tag vX.Y.Z it gates, builds,
+# and creates a DRAFT release. A person publishes the draft after verifying it.
+# It never replaces assets of an existing release.
+# Action and validator pins are copied from multi-agent-folder-cleanup v1.6.1;
+# review them before first use.
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (e.g. 1.0.0). Builds artifacts only; never creates a release.'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false  # later steps run downloaded code; do not leave the write token in .git
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+      - name: Install validation dependency
+        run: python -m pip install --disable-pip-version-check PyYAML
+
+      - name: Resolve version and skill
+        id: ver
+        env:
+          INPUT_VERSION: ${{ github.event.inputs.version }}
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then VERSION="$INPUT_VERSION"; else VERSION="${GITHUB_REF_NAME#v}"; fi
+          if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then echo "Refusing non-semver version: $VERSION"; exit 1; fi
+          SKILL=$(python3 -c "import json;print(json.load(open('packaging/packages.json'))['skill'])")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "skill=$SKILL" >> "$GITHUB_OUTPUT"
+
+      - name: Refuse if a release for this tag already exists
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "A release for $GITHUB_REF_NAME already exists. Published bytes are never replaced; ship a new version."
+            exit 1
+          fi
+
+      - name: Versions agree and notes exist
+        run: |
+          python3 packaging/check_versions.py --repo . --config packaging/version_files.json \
+            --version "${{ steps.ver.outputs.version }}" --workflow .github/workflows/release.yml
+
+      - name: Validate skill frontmatter
+        run: |
+          python3 - "${{ steps.ver.outputs.skill }}" <<'EOF'
+          import sys, yaml
+          name = sys.argv[1]
+          text = open(f'skills/{name}/SKILL.md', encoding='utf-8').read()
+          if not text.startswith('---'):
+              sys.exit('SKILL.md has no YAML frontmatter')
+          fm = yaml.safe_load(text.split('---')[1])
+          if fm.get('name') != name:
+              sys.exit(f"frontmatter name {fm.get('name')!r} does not match {name!r}")
+          if not fm.get('description') or len(fm['description']) > 1024:
+              sys.exit('description missing or over 1024 chars')
+          print('Frontmatter OK')
+          EOF
+
+      - name: Run OpenAI skill validator (pinned)
+        run: |
+          curl --fail --silent --show-error --location \
+            https://raw.githubusercontent.com/openai/skills/49f948faa9258a0c61caceaf225e179651397431/skills/.system/skill-creator/scripts/quick_validate.py \
+            --output /tmp/openai-quick-validate.py
+          python /tmp/openai-quick-validate.py skills/${{ steps.ver.outputs.skill }}
+
+      - name: Run tests
+        run: if [ -d tests ]; then python -m unittest discover -s tests -v; else echo "no tests directory"; fi
+
+      - name: Build and verify packages
+        run: |
+          set -euo pipefail
+          rm -rf dist
+          python3 packaging/build_packages.py dist --status "release build ${GITHUB_REF_NAME}"
+          rm -f dist/BUILD_EVIDENCE.json
+          cat dist/SHA256SUMS.txt
+          if find dist -name __pycache__ | grep -q .; then echo "__pycache__ leaked"; exit 1; fi
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: packages-${{ steps.ver.outputs.version }}
+          path: dist/
+
+      - name: Create DRAFT release
+        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.ver.outputs.version }}"
+          NOTES="packaging/RELEASE_NOTES_v$VERSION.md"
+          if [ ! -f "$NOTES" ]; then echo "Missing $NOTES; refusing to create a release without reviewed notes."; exit 1; fi
+          gh release create "$GITHUB_REF_NAME" --draft --verify-tag \
+            --title "${{ steps.ver.outputs.skill }} v$VERSION" \
+            --notes-file "$NOTES" \
+            dist/*.zip dist/SHA256SUMS.txt
+          echo "Draft created. Verify the downloaded assets (publish.md section 3); only then publish it (publish.md section 4)."

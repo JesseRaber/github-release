@@ -1,0 +1,53 @@
+{
+  "files": [
+    {
+      "path": "skills/github-release/SKILL.md",
+      "pattern": "^  version: \"{v}\""
+    },
+    {
+      "path": "skills/github-release/SKILL.md",
+      "pattern": "Loaded GitHub Release v{v}"
+    },
+    {
+      "path": "skills/github-release/scripts/check_versions.py",
+      "pattern": "__version__ = '{v}'"
+    },
+    {
+      "path": "skills/github-release/scripts/verify_release.py",
+      "pattern": "__version__ = '{v}'"
+    },
+    {
+      "path": "packaging/check_versions.py",
+      "pattern": "__version__ = '{v}'"
+    },
+    {
+      "path": "packaging/verify_release.py",
+      "pattern": "__version__ = '{v}'"
+    },
+    {
+      "path": ".claude-plugin/plugin.json",
+      "pattern": "\"version\": \"{v}\""
+    },
+    {
+      "path": ".codex-plugin/plugin.json",
+      "pattern": "\"version\": \"{v}\""
+    },
+    {
+      "path": "packaging/INSTALL-universal.md",
+      "pattern": "v{v}"
+    },
+    {
+      "path": "packaging/INSTALL-microsoft-copilot.md",
+      "pattern": "v{v}"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "pattern": "^## {v}"
+    }
+  ],
+  "history": [
+    "CHANGELOG.md",
+    "packaging/RELEASE_NOTES_v*.md",
+    "HOST_INSTALL_LOG.md"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "jesseraber-github-release",
+  "description": "github-release Agent Skill",
+  "owner": {
+    "name": "Jesse Raber",
+    "url": "https://github.com/JesseRaber"
+  },
+  "plugins": [
+    {
+      "name": "github-release",
+      "source": "./",
+      "description": "Create GitHub repositories for Agent Skills and release them right the first time: version gate, deterministic host packages, draft-first publishing, published-asset verification and a per-host install log.",
+      "license": "MIT",
+      "homepage": "https://github.com/JesseRaber/github-release"
+    }
+  ]
+}

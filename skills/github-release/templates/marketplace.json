@@ -1,0 +1,8 @@
+{
+  "name": "OWNER-plugins",
+  "description": "Agent Skills",
+  "owner": {"name": "OWNER"},
+  "plugins": [
+    {"name": "SKILL-NAME", "source": "./", "description": "One line.", "license": "MIT"}
+  ]
+}

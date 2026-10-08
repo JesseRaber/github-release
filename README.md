@@ -1,0 +1,27 @@
+# GitHub Release
+
+An Agent Skill that teaches AI agents to set up skill repositories and release them right the first time: a version gate before any tag, deterministic packages for each AI host, draft-first publishing, verification that published bytes equal the tested build, and a dated per-host install log.
+
+## Which ZIP do I download?
+
+| Your AI app | Download |
+|---|---|
+| Claude app, ChatGPT/Codex standalone skills, Antigravity, local models, any skills folder | `…-UNIVERSAL-skill.zip` |
+| Claude Code `/plugin install` | `…-claude-code-plugin.zip` |
+| Codex / ChatGPT plugin | `…-codex-chatgpt-plugin.zip` |
+| Microsoft Copilot agent, Grok | `…-microsoft-copilot-agent-only.zip` |
+| Gemini Apps | `…-gemini-apps-only.zip` |
+| Opal | `…-opal-only.zip` |
+
+## What it enforces
+
+- Creating a repository, pushing, tagging, publishing, changing settings and installing into hosts are separate owner approvals.
+- Gate first, tag second. The release workflow creates a **draft**; the draft's assets are verified against the local candidate before a person publishes.
+- Published bytes are never replaced. A defect ships as a new patch version.
+- Every host rule carries a date and a source.
+
+## Layout
+
+`skills/github-release/` is the skill. `packaging/` builds and checks releases of this repository with the skill's own templates.
+
+MIT licensed.

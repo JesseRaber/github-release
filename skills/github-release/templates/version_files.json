@@ -1,0 +1,11 @@
+{
+  "files": [
+    {"path": "skills/SKILL-NAME/SKILL.md", "pattern": "^  version: \"{v}\""},
+    {"path": "skills/SKILL-NAME/SKILL.md", "pattern": "Loaded .* v{v}"},
+    {"path": ".claude-plugin/plugin.json", "pattern": "\"version\": \"{v}\""},
+    {"path": ".codex-plugin/plugin.json", "pattern": "\"version\": \"{v}\""},
+    {"path": "packaging/INSTALL-universal.md", "pattern": "v{v}"},
+    {"path": "CHANGELOG.md", "pattern": "## {v}"}
+  ],
+  "history": ["CHANGELOG.md", "packaging/RELEASE_NOTES_v*.md", "HOST_INSTALL_LOG.md"]
+}

@@ -1,0 +1,86 @@
+# CI template from the github-release skill. Copy to .github/workflows/ci.yml.
+# Runs the same checks the tag workflow runs, so problems surface before a tag exists,
+# and proves that Windows and Ubuntu builds produce identical archives.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: ubuntu-latest, python: '3.11'}
+          - {os: windows-latest, python: '3.11'}
+          - {os: ubuntu-22.04, python: '3.8'}  # oldest supported Python; drop this leg if the runner image or setup-python retires 3.8
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Tests
+        shell: bash
+        run: if [ -d tests ]; then python -m unittest discover -s tests -v; else echo "no tests directory"; fi
+      - name: Gate checks (versions agree, notes exist, workflow is draft-first)
+        shell: bash
+        run: |
+          SKILL=$(python -c "import json;print(json.load(open('packaging/packages.json'))['skill'])")
+          VERSION=$(python -c "import re;print(re.search(r'^  version: \"([^\"]+)\"', open('skills/$SKILL/SKILL.md', encoding='utf-8').read(), re.M)[1])")
+          python packaging/check_versions.py --repo . --config packaging/version_files.json \
+            --version "$VERSION" --workflow .github/workflows/release.yml
+      - name: Candidate build (byte-verified, not published)
+        shell: bash
+        run: python packaging/build_packages.py "$RUNNER_TEMP/candidate" --status "CI candidate, not published"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: sums-${{ matrix.os }}-${{ matrix.python }}
+          path: ${{ runner.temp }}/candidate/SHA256SUMS.txt
+
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: '3.11'
+      - name: Frontmatter and OpenAI skill validator (pinned)
+        run: |
+          python -m pip install --disable-pip-version-check PyYAML
+          SKILL=$(python -c "import json;print(json.load(open('packaging/packages.json'))['skill'])")
+          python - "$SKILL" <<'PY'
+          import sys, yaml
+          name = sys.argv[1]
+          fm = yaml.safe_load(open(f'skills/{name}/SKILL.md', encoding='utf-8').read().split('---')[1])
+          assert fm.get('name') == name, fm.get('name')
+          assert fm.get('description') and len(fm['description']) <= 1024
+          print('Frontmatter OK')
+          PY
+          curl --fail --silent --show-error --location \
+            https://raw.githubusercontent.com/openai/skills/49f948faa9258a0c61caceaf225e179651397431/skills/.system/skill-creator/scripts/quick_validate.py \
+            --output /tmp/openai-quick-validate.py
+          python /tmp/openai-quick-validate.py "skills/$SKILL"
+
+  same-bytes:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          path: sums
+      - name: Windows and Ubuntu builds must be byte-identical
+        run: |
+          ls sums
+          diff sums/sums-ubuntu-latest-3.11/SHA256SUMS.txt sums/sums-windows-latest-3.11/SHA256SUMS.txt
+          echo "Identical archives on Ubuntu and Windows"
