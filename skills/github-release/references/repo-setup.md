@@ -38,5 +38,5 @@ Use in **Setup**. Draft everything locally first; creating the GitHub repository
 1. Owner reviews the local draft repository.
 2. Create the repository (approval: name, visibility, owner account).
 3. Push `main` (approval).
-4. Settings: branch protection, immutable releases (approval).
+4. Settings: branch protection, immutable releases (approval). Settings changes are usually refused from cloud agent sessions (observed 2026-10-08) and run in the owner's browser or signed-in `gh`; GitHub may demand the owner's passkey ("sudo mode") — stop and ask the owner to complete it, then confirm the result by API read (for example `gh api repos/<owner>/<repo>/branches/main/protection`).
 5. First release follows publish.md.
