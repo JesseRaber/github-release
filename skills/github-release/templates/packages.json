@@ -6,7 +6,7 @@
     "claude-code-plugin": {"layout": "plugin", "metadata": ".claude-plugin", "add": {"LICENSE": "LICENSE", "README.md": "README.md", "CHANGELOG.md": "CHANGELOG.md", "INSTALL.md": "packaging/INSTALL-claude-code.md"}},
     "codex-chatgpt-plugin": {"layout": "plugin", "metadata": ".codex-plugin", "add": {"LICENSE": "LICENSE", "README.md": "README.md", "CHANGELOG.md": "CHANGELOG.md", "INSTALL.md": "packaging/INSTALL-codex-chatgpt.md"}},
     "microsoft-copilot-agent-only": {"layout": "skill", "exclude_suffix": [".ps1"], "add": {"LICENSE.txt": "LICENSE", "INSTALL.md": "packaging/INSTALL-microsoft-copilot.md"}},
-    "gemini-apps-only": {"layout": "skill", "exclude_prefix": ["agents/"], "exclude_suffix": [".ps1", ".yaml", ".yml"], "exclude_files": [], "add": {"LICENSE.txt": "LICENSE"}},
+    "gemini-apps-only": {"layout": "skill", "exclude_prefix": ["agents/"], "exclude_suffix": [".ps1", ".yaml", ".yml"], "exclude_no_suffix": true, "exclude_files": [], "add": {"LICENSE.txt": "LICENSE"}},
     "opal-only": {"layout": "opal"}
   }
 }

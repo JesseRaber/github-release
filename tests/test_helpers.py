@@ -65,6 +65,13 @@ class BuilderTests(unittest.TestCase):
         self.assertFalse([n for n in z.namelist() if n.endswith(('.yml', '.yaml', '.ps1'))])
         self.assertIn('github-release/scripts/verify_release.py', z.namelist())
 
+    def test_gemini_omits_extensionless(self):
+        z = zipfile.ZipFile(self.tmp / 'a' / ('github-release-%s-gemini-apps-only.zip' % self.version))
+        files = [n for n in z.namelist() if not n.endswith('/')]
+        self.assertFalse([n for n in files if '.' not in n.rsplit('/', 1)[-1]])
+        u = zipfile.ZipFile(self.tmp / 'a' / ('github-release-%s-UNIVERSAL-skill.zip' % self.version))
+        self.assertIn('github-release/templates/gitattributes', u.namelist())
+
     def test_opal_flat_lf(self):
         z = zipfile.ZipFile(self.tmp / 'a' / ('github-release-%s-opal-only.zip' % self.version))
         names = z.namelist()

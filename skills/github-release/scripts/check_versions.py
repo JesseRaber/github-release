@@ -22,7 +22,7 @@ from pathlib import Path
 import re
 import sys
 
-__version__ = '0.2.0'
+__version__ = '0.2.1'
 SEMVER = re.compile(r'^\d+\.\d+\.\d+$')
 TEXT_SUFFIXES = {'.md', '.py', '.json', '.yml', '.yaml', '.txt', '.ps1', '.toml', '.cfg'}
 SKIP_DIRS = {'.git', '__pycache__', 'node_modules', 'dist'}

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1 (draft, not released)
+
+- Gemini Apps package: leave out files without an extension. Gemini's skill uploader rejected 0.2.0 ("The skill folder contains a file with an unsupported file type") because of `templates/gitattributes`; the same package without it was accepted (2026-10-08).
+- Builder 1.0.1: new `exclude_no_suffix` key in `packages.json`, plus a host invariant that refuses extensionless files in `gemini-apps-only` regardless of config. Regression test added.
+- host-matrix, packaging and INSTALL docs record what Gemini accepted (`.py`, `.json`, `.md`, `.txt`) and the open question of whether scripts run there.
+
 ## 0.2.0 (draft, not released)
 
 Portfolio and install lessons (R-023..R-035, R-038..R-040; evidence in the project's 2026-10-08 scan and install records):
