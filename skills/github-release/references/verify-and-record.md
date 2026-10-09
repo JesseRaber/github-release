@@ -17,6 +17,13 @@ Exit 0 only when every requested check ran and passed. Quote its output in the r
 
 Spot-check content too: open one packaged `SKILL.md` per host package and confirm the version line.
 
+## Install procedure (replacing an existing host copy)
+
+1. Back up the currently installed copy with a SHA-256 manifest and `sha256sum -c` the backup before touching anything.
+2. Verify the new archive against the release `SHA256SUMS.txt`.
+3. Replace, then compare the installed tree to the archive **file for file, including the count of extra files (must be 0)** — a hash-match of present files does not catch leftovers from the old version.
+4. Confirm the loaded report line and its path in a fresh host session (`templates/HOST_INSTALL_CHECK_PROMPT.md` generates the read-only check to paste into the host); the path in the line is what exposes shadow copies in plugin caches and stale channels.
+
 ## Record host installs
 
 Each skill repository keeps `HOST_INSTALL_LOG.md` (template in `templates/`). Append one row per attempt; never edit old rows except to add a `superseded` row that points forward.
@@ -26,6 +33,7 @@ Each skill repository keeps `HOST_INSTALL_LOG.md` (template in `templates/`). Ap
 | Date | ISO date and time with timezone, when known |
 | Version / Asset | exact archive name; first 12 of its SHA-256 |
 | Host / account | e.g. Gemini Apps, personal; Copilot, tenant name |
+| Channel | which install channel on that host (see host-matrix.md "Install channels per host") |
 | Action | upload, update, remove, smoke-test |
 | Result | `accepted`, `rejected`, `accepted-not-loaded`, `loaded-smoke-pass`, `loaded-smoke-fail`, `superseded` |
 | Displayed | the name/version the host shows, or `none shown` |

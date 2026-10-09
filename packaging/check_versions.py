@@ -22,7 +22,7 @@ from pathlib import Path
 import re
 import sys
 
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 SEMVER = re.compile(r'^\d+\.\d+\.\d+$')
 TEXT_SUFFIXES = {'.md', '.py', '.json', '.yml', '.yaml', '.txt', '.ps1', '.toml', '.cfg'}
 SKIP_DIRS = {'.git', '__pycache__', 'node_modules', 'dist'}
@@ -75,17 +75,15 @@ def is_history(rel, patterns):
     return any(fnmatch.fnmatch(rel, pat) for pat in patterns)
 
 
-def check_previous(repo, cfg, previous, results):
-    pat = re.compile(r'(?<![\d.])v?' + re.escape(previous) + r'(?![\d])')
-    hits = []
-    for root, dirs, files in os.walk(repo):
+def _scan_previous(base, label, pat, history, hits):
+    for root, dirs, files in os.walk(base):
         dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS)
         for f in sorted(files):
             p = Path(root) / f
             if p.suffix.lower() not in TEXT_SUFFIXES:
                 continue
-            rel = p.relative_to(repo).as_posix()
-            if is_history(rel, cfg['history']):
+            rel = p.relative_to(base).as_posix()
+            if history is not None and is_history(rel, history):
                 continue
             try:
                 lines = p.read_text(encoding='utf-8').splitlines()
@@ -93,13 +91,26 @@ def check_previous(repo, cfg, previous, results):
                 continue
             for i, line in enumerate(lines, 1):
                 if pat.search(line):
-                    hits.append('%s:%d: %s' % (rel, i, line.strip()[:120]))
+                    hits.append('%s%s:%d: %s' % (label, rel, i, line.strip()[:120]))
+
+
+def check_previous(repo, cfg, previous, results, extra_roots=()):
+    pat = re.compile(r'(?<![\d.])v?' + re.escape(previous) + r'(?![\d])')
+    hits = []
+    _scan_previous(repo, '', pat, cfg['history'], hits)
+    for er in extra_roots:
+        erp = Path(er)
+        if not erp.is_dir():
+            results.append(('FAIL', 'extra root not found (clone it or drop the flag): %s' % er))
+            continue
+        _scan_previous(erp, erp.name + '/', pat, None, hits)
     if hits:
         results.append(('FAIL', '%d mention(s) of previous version %s outside history files; '
                                 'fix each or add the file to "history":' % (len(hits), previous)))
         results.extend(('    ', h) for h in hits)
     else:
         results.append(('PASS', 'no mentions of previous version %s outside history files' % previous))
+
 
 
 def check_workflow(path, results):
@@ -132,6 +143,8 @@ def main(argv=None):
     ap.add_argument('--repo', default='.')
     ap.add_argument('--version', dest='new_version')
     ap.add_argument('--previous')
+    ap.add_argument('--extra-root', action='append', default=[],
+                    help='also scan this directory (e.g. a wiki clone) for previous-version mentions; repeatable')
     ap.add_argument('--config')
     ap.add_argument('--workflow')
     ap.add_argument('-V', '--tool-version', action='store_true', help='print helper version')
@@ -158,7 +171,7 @@ def main(argv=None):
     check_touch_points(repo, cfg, args.new_version, results)
     check_notes(repo, args.new_version, results)
     if args.previous:
-        check_previous(repo, cfg, args.previous, results)
+        check_previous(repo, cfg, args.previous, results, args.extra_root)
     if args.workflow:
         check_workflow(repo / args.workflow if not Path(args.workflow).is_absolute() else args.workflow, results)
     failed = sum(1 for status, _ in results if status == 'FAIL')

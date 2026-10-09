@@ -29,6 +29,8 @@ Use in **Setup**. Draft everything locally first; creating the GitHub repository
 - `.gitattributes`: LF for `.md`, `.py`, `.json`, `.yml`; leave `.ps1` as the repository already has it.
 - Actions pinned by full commit SHA; external validators downloaded at pinned commits.
 - Branch protection on `main`: PR required, CI required.
+- "Automatically delete head branches" ON (settings change, approval) — stale merged branches otherwise accumulate (9 observed on one repo before a manual tidy).
+- Social-preview image (Settings → General, 1280×640) and repository Website field set before wide sharing; both are owner settings actions.
 - Releases: enable **immutable releases** in repository settings (owner approval; it is a settings change).
 - CI on Ubuntu, and on Windows when helpers are meant to run on Windows.
 - README opens with a "which ZIP do I download?" table generated from host-matrix.md.

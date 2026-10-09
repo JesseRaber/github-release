@@ -133,6 +133,21 @@ class CheckVersionsTests(unittest.TestCase):
             self.assertEqual(r.returncode, 1)
             self.assertIn('ONE release object', r.stdout)
 
+    def test_extra_root_previous_scan(self):
+        with tempfile.TemporaryDirectory() as td:
+            wiki = Path(td) / 'wiki'
+            wiki.mkdir()
+            (wiki / 'Home.md').write_text('Current release: v0.0.1\n', encoding='utf-8')
+            v = json.loads((REPO / '.claude-plugin/plugin.json').read_text())['version']
+            r = run(SKILL / 'scripts/check_versions.py', '--repo', REPO, '--version', v,
+                    '--previous', '0.0.1', '--extra-root', wiki)
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn('wiki/Home.md', r.stdout)
+            r = run(SKILL / 'scripts/check_versions.py', '--repo', REPO, '--version', v,
+                    '--previous', '0.0.1', '--extra-root', Path(td) / 'missing')
+            self.assertNotEqual(r.returncode, 0)
+            self.assertIn('extra root not found', r.stdout)
+
     def test_helper_versions(self):
         for s in ('check_versions.py', 'verify_release.py'):
             r = run(SKILL / 'scripts' / s, '--version')

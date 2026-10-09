@@ -19,7 +19,7 @@ from pathlib import Path
 import sys
 import zipfile
 
-__version__ = '0.1.0'
+__version__ = '0.2.0'
 SUMS = 'SHA256SUMS.txt'
 
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0 (draft, not released)
+
+Portfolio and install lessons (R-023..R-035, R-038..R-040; evidence in the project's 2026-10-08 scan and install records):
+
+- Gate: G0 release-lane-free (one release in flight; expected-main-SHA refusal); fresh clone outside synced folders; G8b executable-bit drift; G8c tag-kind consistency; G11 out-of-repo touch points (`check_versions.py --extra-root`, e.g. a wiki clone); G12 lightweight visual check before public pushes.
+- Publish: connector/API pushes can alter bytes — compare pushed blob SHAs with `git hash-object` before the PR; never rename a branch with an open PR (replacement-PR procedure); `--force-with-lease` scope; delete the merged release branch with a recovery SHA after publishing.
+- Host matrix: install channels per host (they drift independently; read installed files, never catalog caches); Microsoft Copilot split into Agent Builder vs chat attachment with the ZIP-root question documented open (W-015); Opal/Manus/Copilot sandboxes are review-only — no git work there.
+- Record: install procedure (backup with manifest, file-for-file compare incl. zero extra files); `Channel` column in HOST_INSTALL_LOG; new `templates/HOST_INSTALL_CHECK_PROMPT.md` and `templates/NEXT_AGENT_RELEASE_PROMPT.md`.
+- Loaded line now names the SKILL.md path, so checks can spot shadow copies.
+- Repo setup: auto-delete head branches and social-preview/Website fields as defaults; `safe.directory` note for tool-owned clones.
+
 ## 0.1.0 (draft, not released)
 
 - First version: modes Setup, Prepare, Gate, Publish, Verify, Record.

@@ -15,6 +15,17 @@ An Agent Skill that teaches AI agents to set up skill repositories and release t
 | Gemini Apps | `…-gemini-apps-only.zip` |
 | Opal | `…-opal-only.zip` |
 
+## The flow it enforces
+
+```mermaid
+flowchart LR
+    P[Prepare\ncandidate + checks] --> G[Gate\nG0-G12, read-only]
+    G -->|owner approves tag| T[Tag pushed\nworkflow builds DRAFT]
+    T --> V[Verify draft\nbytes == candidate]
+    V -->|owner approves publish| R[Published\nimmutable]
+    R --> H[Host installs\nlogged per channel]
+```
+
 ## What it enforces
 
 - Creating a repository, pushing, tagging, publishing, changing settings and installing into hosts are separate owner approvals.
