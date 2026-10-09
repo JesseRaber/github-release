@@ -26,6 +26,8 @@ Typical touch points:
 
 ## 2. Build the local candidate
 
+Build from a **fresh clone of the canonical repository, outside any synced folder** (`%USERPROFILE%\dev\<repo>` or a temp dir, never inside OneDrive/SharePoint), cloned with `core.autocrlf=false`. Observed failures from clones inside synced project folders: `.git/index.lock` conflicts, read-only dirs that cannot be removed, stale copies that no longer match the remote (2026-10-06, folder-cleanup and cabinet-load-optimizer records). A project folder's copy of the repo is documentation, not a build source.
+
 ```bash
 python packaging/build_packages.py ../candidate-1.2.0 --status "local candidate, not published"
 ```
@@ -40,7 +42,8 @@ Run in order. Stop at the first fail.
 
 | # | Check | How |
 |---|---|---|
-| G1 | Working tree clean; candidate built from the exact commit to be tagged | `git status --porcelain` empty; record `git rev-parse HEAD` |
+| G0 | Release lane is free: no other open release PR; no `v<version>-*` branch by another writer; the expected `main` SHA (from the handoff prompt, when one exists) still equals the remote | `gh pr list --state open`; `git ls-remote --heads origin`; `git ls-remote origin main`. One release in flight per repo — observed collision 2026-10-08: two agents built "v1.6.2" from different bases; the loser's PR had to be renumbered |
+| G1 | Working tree clean; candidate built from the exact commit to be tagged, in a fresh clone outside synced folders (section 2) | `git status --porcelain` empty; record `git rev-parse HEAD` |
 | G2 | Versions agree; no unintended stale versions | `check_versions.py` exit 0 |
 | G3 | Release notes file exists for this version | `check_versions.py` |
 | G4 | Workflow is draft-first and never clobbers | `check_versions.py --workflow .github/workflows/release.yml` |
@@ -49,13 +52,18 @@ Run in order. Stop at the first fail.
 | G6 | Skill validators pass (frontmatter, name matches folder, description <= 1024 chars; OpenAI skill/plugin validators pinned by commit) | CI or local run |
 | G7 | Candidate built, every archive byte-verified, packaged scripts smoke-tested | builder output; no warnings left unexplained |
 | G8 | Line endings: `.md`/`.py` are LF in the repository (`.gitattributes`); no CRLF in the Opal package | builder asserts Opal; `git ls-files --eol` |
+| G8b | No unintended executable bits (mode drift between OSes is real: 3 files went 100755 on Linux while Windows kept 100644, folder-cleanup v1.6.1) | `git ls-files -s \| grep ^100755` lists only intended scripts |
+| G8c | Tag kind matches the repository's convention — mixed lightweight/annotated tags break `v<tag>^{}` peeling and citation | `git cat-file -t v<previous>` (expect `tag` for annotated) |
 | G9 | Each host package matches host-matrix.md rules for this release | compare package listing with Table A |
 | G10 | Tag does not exist yet locally or remotely | `git ls-remote --tags origin vX.Y.Z` empty |
+| G11 | Out-of-repo version touch points: the wiki (`<repo>.wiki.git`), marketplace listings and host store descriptions name the new version or are explicitly listed as not-run | `check_versions.py --previous X.Y.Z --extra-root ../wiki-clone`; anything unreachable gets a `not-run` line, never a silent pass |
+| G12 | Visual check before a public push: README renders (tables, any diagram), links and image alt text are current, and the social-preview image is not contradicted by this release's content. Update assets only when content changed | open the rendered README on the branch; repository settings → social preview (owner) |
 
 ## 4. Windows lessons (observed)
 
 - Clone with `core.autocrlf=false`; `git am` failed with `autocrlf=true`. The template `.gitattributes` forces LF for all text so Windows and Linux builds match.
-- A local candidate is only comparable to the CI build if both use the same builder version; the builder pins ZIP metadata (`create_system`) so the OS does not change the bytes. Different zlib versions could still change compressed bytes; if a candidate differs only that way, compare member contents and record it.
+- A local candidate is only comparable to the CI build if both use the same builder version; the builder pins ZIP metadata (`create_system`) so the OS does not change the bytes. Different zlib versions could still change compressed bytes; if a candidate differs only that way, compare member contents and record it. When the owner's machine and CI run different OSes and bytes still differ, the comparable candidate is the **CI artifact of the gated commit** (download it from the CI run) rather than the laptop build.
+- If `git status` reports "dubious ownership" (clones inside tool-owned dirs such as `~/.codex/...`), use `git -c safe.directory=<absolute path>` for that clone only; never set `safe.directory=*`.
 - Child-process stdout is cp1252 on Windows; helpers must write UTF-8 safely.
 - Do not write shared text files with Windows PowerShell 5.1 (BOM/ANSI). Preserve a BOM only where a file already needs one.
 - Do not retype large files through chat tools; copy or apply patches.

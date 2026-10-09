@@ -25,7 +25,7 @@ Point the system prompt or context loader at `github-release/SKILL.md`.
 
 > Is my skill repository ready to tag v1.0.0?
 
-A loaded skill states **Mode: Gate** first and reports **Loaded GitHub Release v0.1.0**.
+A loaded skill states **Mode: Gate** first and reports **Loaded GitHub Release v0.2.0 (SKILL.md at <path>)**.
 
 ## Requirements
 

@@ -32,6 +32,8 @@ Observed 2026-10-08 (multi-agent-folder-cleanup v1.6.2 pilot): a cloud agent ses
 
 When a step is refused from the cloud, do not retry through another route; hand the owner the exact command and wait. The refusal changes where the step runs, never the approval for it.
 
+Prefer `git push` from a real clone. If a connector/API push is the only route, it can **alter file bytes** (observed 2026-10-06: a connector decoded `\u` escapes in a pushed Python file into literal characters; caught only by hash comparison). After any non-git push, before opening the PR, compare every pushed blob with the local file: `gh api repos/<o>/<r>/contents/<path>?ref=<sha> --jq .sha` must equal `git hash-object <path>` locally.
+
 - Typical flow: feature PR (CI green) → merge → release PR with version bump (CI green) → merge → annotated tag on the merge commit.
 
 ```bash
@@ -77,10 +79,12 @@ With immutable releases enabled in repository settings, assets and the tag are l
 
 - Download the published assets again into the project's local release folder and run `verify_release.py --expect-published --expect-immutable` against the published metadata (`gh api repos/<owner>/<repo>/releases/tags/v1.2.0`).
 - Published releases do not update any host. Each host install is a separate action and a separate install-log row ([verify-and-record.md](verify-and-record.md)).
+- Delete the merged release branch (approval), recording its tip SHA for recovery; list any other remote branches whose tips are ancestors of `main` for a separate owner decision. Repositories with "automatically delete head branches" enabled (repo-setup default) skip the first step.
 - Update the project's records: tracker, quick context, index.
 
 ## Never
 
+- Renaming a branch that has an open PR — GitHub closes the PR and it cannot be reopened (observed 2026-10-08). A renumbered candidate gets a new branch and a replacement PR; close the old PR with a comment linking forward. `--force-with-lease` only on your own un-reviewed branch, never on `main`.
 - `gh release upload --clobber` or deleting and re-uploading a published asset.
 - `--generate-notes` as a substitute for the reviewed notes file.
 - Publishing from a session that cannot show the verify result.

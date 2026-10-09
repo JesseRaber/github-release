@@ -18,21 +18,34 @@ Reference: `multi-agent-folder-cleanup` v1.6.1. On 2026-10-08 the author rebuilt
 | `-opal-only` | Opal import | `SKILL.md` with only `name` + `description` frontmatter; top-level `references/*.md`; LF endings; **no folder entries** | everything else | observed: confirmed by import (repo CHANGELOG 1.5.0); per-file size rejection above ~48–79 KB observed 2026-10-03, approximate | 2026-10-06 |
 | `-project-rules-optional` | add-on, any host | only if the skill ships optional add-on material | — | repo | 2026-10-06 |
 
+## Install channels per host
+
+A host can have several install channels that drift to different versions independently (observed on Codex three times: standalone dir vs Personal Plugin at different versions; the standalone dir vanished twice between turns). Rules: record the **Channel** in every install-log row; a version check reads the **installed files** (`SKILL.md` metadata, helper `--version`), never a catalog cache — if a cache is cited, record its mtime.
+
+| Host | Channels |
+|---|---|
+| Claude | app skill upload (Settings → Capabilities → Skills); Claude Code plugin (`/plugin install` or marketplace) |
+| Codex / ChatGPT | standalone skills dir (`~/.codex/skills/`); Personal Plugin (manual "Upload new version" in the ChatGPT UI — no API); desktop marketplace (cache `~/.codex/cache/remote_plugin_catalog/*.json` is stale evidence) |
+| Antigravity | `~/.gemini/config/skills/` from the repository |
+| Gemini Apps, Copilot, Grok, Opal | single upload channel each (UI) |
+
 ## Host notes
 
 - **Claude app**: upload the Universal ZIP under Settings → Capabilities → Skills (repo-documented path).
 - **Claude Code**: plugin ZIP or the repository marketplace (`.claude-plugin/marketplace.json`).
 - **Codex / ChatGPT**: plugin via Plugin Creator; standalone skill via the Universal ZIP.
-- **Microsoft Copilot**: the sandbox has no direct network; packaged scripts must not need it (repo).
+- **Microsoft Copilot**: two distinct surfaces — **Agent Builder** (Configure → Skills, takes the agent ZIP) and **chat attachment** (observed 2026-10-07 rejecting the ZIP but accepting Markdown files attached directly). The documented Agent Builder layout is root-level `SKILL.md`, while this package nests it under `<name>/`; whether Agent Builder requires the root layout is an **open question** (pending test, ai-prompting W-015) — do not change the package until that test runs. The sandbox has no direct network; packaged scripts must not need it (repo).
 - **Grok**: sandbox is POSIX; OneDrive/SharePoint hydration cannot be checked there (repo).
 - **Gemini Apps**: never rename or obfuscate code to pass the scan; omit and document.
 - **Opal**: references must be flat for the skill to work there; keep essential instructions in `SKILL.md` and top-level `references/`.
 - **Antigravity**: installs from the GitHub repository (repo-documented; untested here).
 - **Local models (Ollama, LM Studio, llama.cpp front-ends)**: point the system prompt or context loader at `SKILL.md`.
 - **Manus**: not in v1; no package rules recorded.
+- **Sandboxed review hosts (Opal, Manus, Copilot)**: review-only for releases — never do git work there. Observed: an Opal workspace reset wiped a clone before it could push (2026-10-07).
 
 ## Open questions
 
 - Does Gemini accept `.yml` templates? (github-release omits them as a precaution.)
 - Is the Opal size limit per file or per package, and what is the exact threshold?
 - Which hosts load an `AGENTS.md` from a project folder? Not a packaging rule; tracked in the project.
+- Does Copilot Agent Builder require root-level `SKILL.md` in the ZIP? (See Microsoft Copilot host note; pending W-015 test.)
