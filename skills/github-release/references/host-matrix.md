@@ -36,7 +36,7 @@ A host can have several install channels that drift to different versions indepe
 - **Codex / ChatGPT**: plugin via Plugin Creator; standalone skill via the Universal ZIP.
 - **Microsoft Copilot**: two distinct surfaces — **Agent Builder** (Configure → Skills, takes the agent ZIP) and **chat attachment** (observed 2026-10-07 rejecting the ZIP but accepting Markdown files attached directly). The documented Agent Builder layout is root-level `SKILL.md`, while this package nests it under `<name>/`; whether Agent Builder requires the root layout is an **open question** (pending test, ai-prompting W-015) — do not change the package until that test runs. The sandbox has no direct network; packaged scripts must not need it (repo).
 - **Grok**: sandbox is POSIX; OneDrive/SharePoint hydration cannot be checked there (repo).
-- **Gemini Apps**: never rename or obfuscate code to pass the scan; omit and document.
+- **Gemini Apps**: the skill uploader rejects a folder containing a file without an extension ("The skill folder contains a file with an unsupported file type", observed 2026-10-08 on `templates/gitattributes`); the same package without that file was accepted, including `.py`, `.json`, `.md` and `.txt`. Whether packaged `.py` scripts can run there is untested. Never rename or obfuscate code to pass the scan; omit and document. Add-on files must keep an extension (`LICENSE.txt`, not `LICENSE`).
 - **Opal**: references must be flat for the skill to work there; keep essential instructions in `SKILL.md` and top-level `references/`.
 - **Antigravity**: installs from the GitHub repository (repo-documented; untested here).
 - **Local models (Ollama, LM Studio, llama.cpp front-ends)**: point the system prompt or context loader at `SKILL.md`.
@@ -45,7 +45,8 @@ A host can have several install channels that drift to different versions indepe
 
 ## Open questions
 
-- Does Gemini accept `.yml` templates? (github-release omits them as a precaution.)
+- Does Gemini accept `.yml` templates? (github-release omits them as a precaution; `.py`/`.json`/`.md`/`.txt` were accepted 2026-10-08.)
+- Can packaged `.py` scripts execute inside Gemini Apps?
 - Is the Opal size limit per file or per package, and what is the exact threshold?
 - Which hosts load an `AGENTS.md` from a project folder? Not a packaging rule; tracked in the project.
 - Does Copilot Agent Builder require root-level `SKILL.md` in the ZIP? (See Microsoft Copilot host note; pending W-015 test.)

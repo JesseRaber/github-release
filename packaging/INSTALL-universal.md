@@ -11,7 +11,7 @@
 
 The folder `github-release/` **is** the skill. Keep `SKILL.md`, `references/`, `scripts/` and `templates/` together.
 
-Host-specific packages leave some files out: Gemini Apps omits the `.yml` workflow templates (precaution); Opal keeps only `SKILL.md` and `references/*.md`, so the helper scripts and templates are not available there.
+Host-specific packages leave some files out: Gemini Apps omits the `.yml` workflow templates (precaution) and `templates/gitattributes` (Gemini rejects files without an extension); Opal keeps only `SKILL.md` and `references/*.md`, so the helper scripts and templates are not available there.
 
 ## Claude app
 
@@ -25,7 +25,7 @@ Point the system prompt or context loader at `github-release/SKILL.md`.
 
 > Is my skill repository ready to tag v1.0.0?
 
-A loaded skill states **Mode: Gate** first and reports **Loaded GitHub Release v0.2.0 (SKILL.md at <path>)**.
+A loaded skill states **Mode: Gate** first and reports **Loaded GitHub Release v0.2.1 (SKILL.md at <path>)**.
 
 ## Requirements
 

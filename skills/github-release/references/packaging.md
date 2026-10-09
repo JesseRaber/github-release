@@ -11,7 +11,7 @@ Copy `templates/build_packages.py` to `packaging/build_packages.py` and `templat
 
 Fidelity check (2026-10-08, by the author, repeatable): with a `packages.json` describing multi-agent-folder-cleanup's seven packages (six like `templates/packages.json` plus a `subtree` add-on), this builder reproduced all seven published v1.6.1 ZIPs byte-for-byte against GitHub's asset digests.
 
-Independent of `packages.json`, the builder also refuses `.ps1` in Copilot packages, `.ps1`/`.yml`/`.yaml` in Gemini packages and non-Markdown in Opal packages, and fails if a script named in `smoke_version_scripts` is never packaged.
+Independent of `packages.json`, the builder also refuses `.ps1` in Copilot packages, `.ps1`/`.yml`/`.yaml` and files without an extension (e.g. `gitattributes`, `LICENSE`) in Gemini packages and non-Markdown in Opal packages, and fails if a script named in `smoke_version_scripts` is never packaged.
 
 ## packages.json
 
@@ -21,7 +21,7 @@ Independent of `packages.json`, the builder also refuses `.ps1` in Copilot packa
   "smoke_version_scripts": ["my_helper.py"],
   "packages": {
     "UNIVERSAL-skill": {"layout": "skill", "add": {"LICENSE.txt": "LICENSE", "INSTALL.md": "packaging/INSTALL-universal.md"}},
-    "gemini-apps-only": {"layout": "skill", "exclude_suffix": [".ps1", ".yaml", ".yml"], "exclude_prefix": ["agents/"]}
+    "gemini-apps-only": {"layout": "skill", "exclude_suffix": [".ps1", ".yaml", ".yml"], "exclude_no_suffix": true, "exclude_prefix": ["agents/"]}
   }
 }
 ```
@@ -30,6 +30,7 @@ Independent of `packages.json`, the builder also refuses `.ps1` in Copilot packa
 |---|---|
 | `layout` | `skill` (folder `<name>/…`), `plugin` (`<name>/skills/<name>/…` + `metadata` manifests), `opal` (flat Markdown, no folder entries), `subtree` (`from` → `to`, for add-ons) |
 | `exclude_prefix` / `exclude_suffix` / `exclude_files` | paths relative to the skill folder to leave out |
+| `exclude_no_suffix` | `true` leaves out skill files whose name has no extension (required for Gemini Apps) |
 | `add` | extra files: archive path inside `<name>/` → repository path |
 | `metadata` | plugin manifest folder (`.claude-plugin`, `.codex-plugin`) |
 | `folder_entries` | override; default true except `opal` |

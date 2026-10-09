@@ -3,7 +3,7 @@ name: github-release
 description: Create GitHub repositories for Agent Skills and release them right the first time - version agreement, a pre-tag gate, deterministic host-specific packages (Claude app, Claude Code, Codex/ChatGPT, Microsoft Copilot, Grok, Gemini Apps, Opal, Antigravity, local models), draft-first publishing, verification of published assets against the local build, and a dated per-host install log. Use whenever an agent prepares, tags, publishes, re-packages or verifies a skill release, sets up a skill repository or release workflow, decides which ZIP a host needs, or records that a skill was uploaded or installed somewhere.
 license: MIT
 metadata:
-  version: "0.2.0"
+  version: "0.2.1"
   repository: https://github.com/JesseRaber/github-release
 ---
 
@@ -11,7 +11,7 @@ metadata:
 
 A release is right the first time when the bytes you tested are the bytes people download, every host gets a package it accepts, and the record says which host has which version and how anyone knows.
 
-Report as: **Loaded GitHub Release v0.2.0 (SKILL.md at <path you loaded>)**. State the mode in the first line. The path lets install checks detect shadow copies and stale channels.
+Report as: **Loaded GitHub Release v0.2.1 (SKILL.md at <path you loaded>)**. State the mode in the first line. The path lets install checks detect shadow copies and stale channels.
 
 ## Choose the mode
 

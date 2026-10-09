@@ -25,7 +25,7 @@ import sys
 import tempfile
 import zipfile
 
-__version__ = '1.0.0'
+__version__ = '1.0.1'
 STAMP = (2026, 1, 1, 0, 0, 0)
 REPO = Path(__file__).resolve().parents[1]
 OPAL_SIZE_WARN = 48 * 1024  # observed Opal per-file rejection ~48-79 KB (approximate, 2026-10-03)
@@ -34,6 +34,9 @@ HOST_INVARIANTS = {
     'microsoft-copilot-agent-only': ('.ps1',),
     'gemini-apps-only': ('.ps1', '.yml', '.yaml'),
 }
+# Hosts whose uploader rejects files without an extension (Gemini Apps: observed 2026-10-08,
+# "unsupported file type" on templates/gitattributes; same package without it was accepted).
+HOST_NO_EXTENSIONLESS = {'gemini-apps-only'}
 # Package names that may appear in packages.json. A renamed package must be added here
 # deliberately, so it cannot silently escape its host invariants.
 KNOWN_PACKAGES = {'UNIVERSAL-skill', 'claude-code-plugin', 'codex-chatgpt-plugin',
@@ -83,7 +86,8 @@ def source_files(skill_dir):
 def excluded(rel, spec):
     return (rel.startswith(tuple(spec.get('exclude_prefix', [])))
             or rel.endswith(tuple(spec.get('exclude_suffix', [])))
-            or rel in spec.get('exclude_files', []))
+            or rel in spec.get('exclude_files', [])
+            or (spec.get('exclude_no_suffix') and '.' not in rel.rsplit('/', 1)[-1]))
 
 
 def opal_skill_md(data):
@@ -163,6 +167,9 @@ def verify(archive, flavor, spec, items, dirs, version, smoke, warnings, smoked)
             if flavor == suffix:
                 bad = [n for n in files_only if n.lower().endswith(banned)]
                 check(not bad, ('host invariant: %s must not contain %s' % (flavor, banned), bad))
+        if flavor in HOST_NO_EXTENSIONLESS:
+            bad = [n for n in files_only if '.' not in n.rsplit('/', 1)[-1]]
+            check(not bad, ('host invariant: %s must not contain files without an extension' % flavor, bad))
         if spec['layout'] == 'opal':
             check(all(n.endswith('.md') for n in files_only))
             check(not any(n.endswith('/') for n in listed))
