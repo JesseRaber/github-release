@@ -17,6 +17,10 @@
       "pattern": "__version__ = '{v}'"
     },
     {
+      "path": "skills/github-release/scripts/check_skill_duplicates.py",
+      "pattern": "__version__ = '{v}'"
+    },
+    {
       "path": "packaging/check_versions.py",
       "pattern": "__version__ = '{v}'"
     },

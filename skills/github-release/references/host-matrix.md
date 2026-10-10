@@ -25,9 +25,20 @@ A host can have several install channels that drift to different versions indepe
 | Host | Channels |
 |---|---|
 | Claude | app skill upload (Settings → Capabilities → Skills); Claude Code plugin (`/plugin install` or marketplace) |
-| Codex / ChatGPT | standalone skills dir (`~/.codex/skills/`); Personal Plugin (manual "Upload new version" in the ChatGPT UI — no API); desktop marketplace (cache `~/.codex/cache/remote_plugin_catalog/*.json` is stale evidence) |
-| Antigravity | `~/.gemini/config/skills/` from the repository |
+| Codex / ChatGPT | standalone skills dir (`~/.codex/skills/`; **every subfolder is scanned** for `SKILL.md` — backups go in `~/.codex/skill-backups/`, observed 2026-10-09); Personal Plugin (manual "Upload new version" in the ChatGPT UI — no API); desktop marketplace (cache `~/.codex/cache/remote_plugin_catalog/*.json` is stale evidence) |
+| Antigravity | `~/.gemini/config/skills/` from the repository; backups in `~/.gemini/config/skills_backups/` beside it (not scanned; observed unaffected 2026-10-09) |
 | Gemini Apps, Copilot, Grok, Opal | single upload channel each (UI) |
+
+### Backups and scanned folders (all hosts)
+
+Treat every folder a host loads skills from as scanned **recursively** unless the host's documentation says otherwise with a date. A copy of a skill anywhere inside it — backup, staging, extracted ZIP — can load as a second skill with the same name and win (observed 2026-10-09: Codex loaded `.codex/skills/_backups/multi-agent-folder-cleanup.pre-v1.7.1-<stamp>` (1.7.0) instead of the new 1.7.1 install; "reveal in folder" pointed at the backup; the same pattern was seen on other skills from earlier installs that day). Rules: backups live beside the skills folder; if that is impossible, rename the backup's `SKILL.md` to `SKILL.backup-not-loaded.md`; after every install run `scripts/check_skill_duplicates.py` over all of the host's skill folders (verify-and-record.md step 5); restart the host before the in-host load check.
+
+| Host | Scanned skill folder(s) | Backup location |
+|---|---|---|
+| Codex standalone | `~/.codex/skills/` (all subfolders) | `~/.codex/skill-backups/` |
+| Antigravity | `~/.gemini/config/skills/` | `~/.gemini/config/skills_backups/` |
+| Claude Code | `~/.claude/skills/`, project `.claude/skills/`, plugin marketplace source dirs and plugin cache | a sibling folder outside each (e.g. `~/.claude/skill-backups/`); inferred, not host-tested |
+| Others with a skills folder | the folder the host documents | a sibling outside it |
 
 ## Host notes
 

@@ -163,3 +163,79 @@ class CheckVersionsTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+DUP = SKILL / 'scripts' / 'check_skill_duplicates.py'
+
+
+def write_skill(folder, name, version):
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / 'SKILL.md').write_text(
+        '---\nname: %s\ndescription: test\nmetadata:\n  version: "%s"\n---\n# x\n' % (name, version),
+        encoding='utf-8')
+
+
+class DuplicateSkillTests(unittest.TestCase):
+    def setUp(self):
+        self.root = Path(tempfile.mkdtemp(prefix='gr-dup-')) / 'skills'
+        write_skill(self.root / 'demo', 'demo', '1.7.1')
+        write_skill(self.root / 'other', 'other', '0.1.0')
+
+    def tearDown(self):
+        shutil.rmtree(self.root.parent)
+
+    def test_clean_install_passes(self):
+        r = run(DUP, self.root, '--name', 'demo', '--expect-version', '1.7.1')
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn('PASS', r.stdout)
+
+    def test_backup_inside_scanned_folder_fails(self):
+        # The 2026-10-09 Codex incident: old copy moved to skills/_backups/<name>.pre-v<new>-<stamp>.
+        write_skill(self.root / '_backups' / 'demo.pre-v1.7.1-20261009', 'demo', '1.7.0')
+        r = run(DUP, self.root, '--name', 'demo', '--expect-version', '1.7.1', '--json')
+        self.assertEqual(r.returncode, 1, r.stdout + r.stderr)
+        out = json.loads(r.stdout)
+        self.assertEqual(out['result'], 'FAIL')
+        paths = sorted(e['path'] for e in out['duplicates']['demo'])
+        self.assertEqual(len(paths), 2)
+        self.assertTrue(any('_backups' in p for p in paths))
+        backup = [e for e in out['entries'] if '_backups' in e['path']][0]
+        self.assertTrue(backup['backup_like_path'])
+        self.assertEqual(backup['version'], '1.7.0')
+        # Without --name the duplicate is still a failure.
+        self.assertEqual(run(DUP, self.root).returncode, 1)
+
+    def test_renamed_backup_is_not_loaded(self):
+        b = self.root / '_backups' / 'demo.pre-v1.7.1-20261009'
+        write_skill(b, 'demo', '1.7.0')
+        (b / 'SKILL.md').rename(b / 'SKILL.backup-not-loaded.md')
+        r = run(DUP, self.root, '--name', 'demo', '--expect-version', '1.7.1')
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+    def test_backup_beside_skills_folder_passes(self):
+        write_skill(self.root.parent / 'skill-backups' / 'demo.pre-v1.7.1', 'demo', '1.7.0')
+        self.assertEqual(run(DUP, self.root, '--name', 'demo').returncode, 0)
+        # Scanning both folders would see it, proving the check covers every root given.
+        self.assertEqual(run(DUP, self.root, self.root.parent / 'skill-backups', '--name', 'demo').returncode, 1)
+
+    def test_wrong_version_fails(self):
+        r = run(DUP, self.root, '--name', 'demo', '--expect-version', '1.8.0')
+        self.assertEqual(r.returncode, 1)
+        self.assertIn('expected 1.8.0', r.stdout)
+
+    def test_missing_skill_and_bad_root(self):
+        self.assertEqual(run(DUP, self.root, '--name', 'absent').returncode, 1)
+        self.assertEqual(run(DUP, self.root / 'nope').returncode, 2)
+
+    def test_lowercase_filename_counts(self):
+        d = self.root / 'copy'
+        write_skill(d, 'demo', '1.7.0')
+        (d / 'SKILL.md').rename(d / 'skill.md')
+        self.assertEqual(run(DUP, self.root, '--name', 'demo').returncode, 1)
+
+    def test_read_only(self):
+        write_skill(self.root / '_backups' / 'x', 'demo', '1.7.0')
+        before = sorted((str(p), p.stat().st_mtime_ns) for p in self.root.rglob('*'))
+        run(DUP, self.root, '--name', 'demo')
+        after = sorted((str(p), p.stat().st_mtime_ns) for p in self.root.rglob('*'))
+        self.assertEqual(before, after)

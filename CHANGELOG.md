@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased (branch fix/install-backup-shadowing; version not yet assigned)
+
+Install backups can no longer shadow a new install (evidence: multi-agent-folder-cleanup 1.7.1 into Codex standalone, 2026-10-09 — all 22 files matched the release and helpers reported 1.7.1, but Codex loaded 1.7.0 from a backup inside `.codex/skills/_backups/`):
+
+- Rule: backups go beside a host's skills folder, never inside it; otherwise rename the backup's `SKILL.md` to `SKILL.backup-not-loaded.md`. All hosts. New hard rule 8 in SKILL.md.
+- Install procedure (verify-and-record.md): required duplicate-name check after every install — exactly one `SKILL.md` with the skill's name, at the new version; more than one is a failed install. Owner restarts the host before the in-host check.
+- Record: new `Host load` field — `confirmed in host` only after an in-host check (skill view, "reveal in folder", arrival line); otherwise `files verified; host load not checked`. Install-log template gains the column; check prompt T2 fails on a backup path.
+- host-matrix.md: scanned folders and backup locations per host (Codex, Antigravity, Claude Code).
+- New helper `scripts/check_skill_duplicates.py` (read-only, standard library) with regression tests, including a backup inside the scanned folder.
+
 ## 0.2.1 (draft, not released)
 
 - Gemini Apps package: leave out files without an extension. Gemini's skill uploader rejected 0.2.0 ("The skill folder contains a file with an unsupported file type") because of `templates/gitattributes`; the same package without it was accepted (2026-10-08).

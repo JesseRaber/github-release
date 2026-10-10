@@ -35,6 +35,7 @@ For "which ZIP do I give host X?" read [host-matrix.md](references/host-matrix.m
 5. **Cite the tag, not `main`.** Evidence about a release comes from the tagged commit and the published assets.
 6. **Never disguise code to pass a host scan.** Omit the file from that host's package and document the omission.
 7. **Upload acceptance is not behavior.** Record what was observed: accepted, loaded, smoke-tested. Each row needs a date, version, asset hash and evidence type.
+8. **Backups never shadow installs.** Never keep a backup inside a folder a host scans for skills; put it beside that folder, or rename its `SKILL.md` to `SKILL.backup-not-loaded.md`. After every install run `scripts/check_skill_duplicates.py` over all of the host's skill folders: exactly one `SKILL.md` may carry the skill's name, at the new version — more than one is a failed install. Tell the owner to restart the host. Matching bytes and `--version` prove the files, not the load: log `files verified; host load not checked` until a check inside the host confirms it (verify-and-record.md).
 
 ## Keep evidence honest
 
@@ -45,4 +46,4 @@ For "which ZIP do I give host X?" read [host-matrix.md](references/host-matrix.m
 
 ## Helpers
 
-`scripts/check_versions.py` (version agreement, stale versions, workflow safety lint) and `scripts/verify_release.py` (published assets vs checksums, GitHub digests, release state and the local candidate) are read-only, standard-library Python 3.8+, and need no network. Both accept `--version`. Skill repositories keep copies in `packaging/` (see repo-setup.md). Templates for the builder, workflow and records are in `templates/`; some host packages omit them (see host-matrix.md).
+`scripts/check_versions.py` (version agreement, stale versions, workflow safety lint), `scripts/verify_release.py` (published assets vs checksums, GitHub digests, release state and the local candidate) and `scripts/check_skill_duplicates.py` (duplicate skill names under host skill folders, after an install) are read-only, standard-library Python 3.8+, and need no network. All accept `--version`. Skill repositories keep copies in `packaging/` (see repo-setup.md). Templates for the builder, workflow and records are in `templates/`; some host packages omit them (see host-matrix.md).
