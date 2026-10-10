@@ -12,14 +12,14 @@ An Agent Skill that teaches AI agents to set up skill repositories and release t
 | Claude Code `/plugin install` | `…-claude-code-plugin.zip` |
 | Codex / ChatGPT plugin | `…-codex-chatgpt-plugin.zip` |
 | Microsoft Copilot agent, Grok | `…-microsoft-copilot-agent-only.zip` |
-| Gemini Apps | `…-gemini-apps-only.zip` |
+| Gemini Spark (not regular Gemini chat, which rejects skills with scripts) | `…-gemini-apps-only.zip` |
 | Opal | `…-opal-only.zip` |
 
 ## The flow it enforces
 
 ```mermaid
 flowchart LR
-    P[Prepare\ncandidate + checks] --> G[Gate\nG0-G12, read-only]
+    P[Prepare\ncandidate + checks] --> G[Gate\nG0-G14, read-only]
     G -->|owner approves tag| T[Tag pushed\nworkflow builds DRAFT]
     T --> V[Verify draft\nbytes == candidate]
     V -->|owner approves publish| R[Published\nimmutable]

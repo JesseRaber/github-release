@@ -1,6 +1,6 @@
 {
   "skill": "github-release",
-  "smoke_version_scripts": ["check_versions.py", "verify_release.py"],
+  "smoke_version_scripts": ["check_versions.py", "verify_release.py", "check_skill_duplicates.py"],
   "packages": {
     "UNIVERSAL-skill": {"layout": "skill", "add": {"LICENSE.txt": "LICENSE", "INSTALL.md": "packaging/INSTALL-universal.md"}},
     "claude-code-plugin": {"layout": "plugin", "metadata": ".claude-plugin", "add": {"LICENSE": "LICENSE", "README.md": "README.md", "CHANGELOG.md": "CHANGELOG.md", "INSTALL.md": "packaging/INSTALL-claude-code.md"}},
