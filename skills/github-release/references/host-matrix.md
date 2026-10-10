@@ -14,7 +14,7 @@ Reference: `multi-agent-folder-cleanup` v1.6.1. On 2026-10-08 the author rebuilt
 | `-claude-code-plugin` | Claude Code `/plugin install` only | `.claude-plugin/*.json` + `skills/<name>/…` + README, CHANGELOG, LICENSE, INSTALL | — | repo; the Claude app uploader rejects plugin files (repo) | 2026-10-06 |
 | `-codex-chatgpt-plugin` | Codex / ChatGPT plugin | `.codex-plugin/*.json` + `skills/<name>/…` + README, CHANGELOG, LICENSE, INSTALL | — | repo; OpenAI validators pinned in CI | 2026-10-06 |
 | `-microsoft-copilot-agent-only` | Microsoft Copilot agent upload; **Grok** | universal minus PowerShell | `*.ps1` | Copilot: repo (validator rejects `.ps1`). Grok: observed 2026-10-05 in an owner upload test (Universal rejected for `.ps1`, this ZIP accepted) — documented as | 2026-10-08 |
-| `-gemini-apps-only` | Gemini Apps upload | skill minus listed omissions | `*.ps1`, `*.yaml`, `*.yml` (precaution, untested), `agents/`, nested `references/*/`, scripts the security scan rejects (folder-cleanup: `audit_folder.py`, credential-hint read guards) | observed: 1.4.1 rejection of `audit_folder.py` (repo CHANGELOG); 1.6.1 package **accepted**, owner-reported 2026-10-08 — it contains a `ctypes`/kernel32 script, so ctypes alone is not rejected (if that was the published asset) | 2026-10-08 |
+| `-gemini-apps-only` | **Gemini Spark** skill upload (regular Gemini chat rejects any skill with scripts — see host notes) | skill minus listed omissions | `*.ps1`, `*.yaml`, `*.yml` (precaution, untested), `agents/`, nested `references/*/`, scripts the security scan rejects (folder-cleanup: `audit_folder.py`, credential-hint read guards) | observed: 1.4.1 rejection of `audit_folder.py` (repo CHANGELOG); 1.6.1 package **accepted**, owner-reported 2026-10-08 — it contains a `ctypes`/kernel32 script, so ctypes alone is not rejected (if that was the published asset) | 2026-10-08 |
 | `-opal-only` | Opal import | `SKILL.md` with only `name` + `description` frontmatter; top-level `references/*.md`; LF endings; **no folder entries** | everything else | observed: confirmed by import (repo CHANGELOG 1.5.0); per-file size rejection above ~48–79 KB observed 2026-10-03, approximate | 2026-10-06 |
 | `-project-rules-optional` | add-on, any host | only if the skill ships optional add-on material | — | repo | 2026-10-06 |
 
@@ -27,7 +27,14 @@ A host can have several install channels that drift to different versions indepe
 | Claude | app skill upload (Settings → Capabilities → Skills); Claude Code plugin (`/plugin install` or marketplace) |
 | Codex / ChatGPT | standalone skills dir (`~/.codex/skills/`; **every subfolder is scanned** for `SKILL.md` — backups go in `~/.codex/skill-backups/`, observed 2026-10-09); Personal Plugin (manual "Upload new version" in the ChatGPT UI — no API); desktop marketplace (cache `~/.codex/cache/remote_plugin_catalog/*.json` is stale evidence) |
 | Antigravity | `~/.gemini/config/skills/` from the repository; backups in `~/.gemini/config/skills_backups/` beside it (not scanned; observed unaffected 2026-10-09) |
-| Gemini Apps, Copilot, Grok, Opal | single upload channel each (UI) |
+| Claude app | skill upload in Settings; skills synced to the account — a Claude cloud session can read the synced copy directly, which is the in-host load evidence for T2 |
+| ChatGPT web | remote skill store; the loaded path shows as `skill://…/remote-skills/<name>/SKILL.md` (observed 2026-10-08) |
+| Grok | server-side skills, loaded from `/root/.grok/server-skills/<name>/` (observed 2026-10-08) |
+| Microsoft Copilot | agent upload; loaded from an `appCatalog/…` path (observed 2026-10-08) |
+| Gemini | **two surfaces**: regular Gemini chat (rejects skills containing scripts) and Gemini Spark (loads them) — observed 2026-10-08 |
+| Opal | single import channel (UI) |
+
+Expected load paths are what T2 of `templates/HOST_INSTALL_CHECK_PROMPT.md` compares against; a different path is a shadow copy or a stale channel until shown otherwise.
 
 ### Backups and scanned folders (all hosts)
 
@@ -47,6 +54,7 @@ Treat every folder a host loads skills from as scanned **recursively** unless th
 - **Codex / ChatGPT**: plugin via Plugin Creator; standalone skill via the Universal ZIP.
 - **Microsoft Copilot**: two distinct surfaces — **Agent Builder** (Configure → Skills, takes the agent ZIP) and **chat attachment** (observed 2026-10-07 rejecting the ZIP but accepting Markdown files attached directly). The documented Agent Builder layout is root-level `SKILL.md`, while this package nests it under `<name>/`; whether Agent Builder requires the root layout is an **open question** (pending test, ai-prompting W-015) — do not change the package until that test runs. The sandbox has no direct network; packaged scripts must not need it (repo).
 - **Grok**: sandbox is POSIX; OneDrive/SharePoint hydration cannot be checked there (repo).
+- **Gemini chat vs Gemini Spark** (observed 2026-10-08, folder-cleanup v1.6.3 install round): regular Gemini chat refused a skill that contains any script file; Gemini Spark loaded the same package. github-release's Gemini package carries three `.py` helpers, so it targets **Spark only**; for Gemini chat, no package is offered — use another host, and never strip or rename scripts to get past the check. A scripts-free chat variant is not built.
 - **Gemini Apps**: the skill uploader rejects a folder containing a file without an extension ("The skill folder contains a file with an unsupported file type", observed 2026-10-08 on `templates/gitattributes`); the same package without that file was accepted, including `.py`, `.json`, `.md` and `.txt`. Whether packaged `.py` scripts can run there is untested. Never rename or obfuscate code to pass the scan; omit and document. Add-on files must keep an extension (`LICENSE.txt`, not `LICENSE`).
 - **Opal**: references must be flat for the skill to work there; keep essential instructions in `SKILL.md` and top-level `references/`.
 - **Antigravity**: installs from the GitHub repository (repo-documented; untested here).

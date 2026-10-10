@@ -3,7 +3,7 @@ name: github-release
 description: Create GitHub repositories for Agent Skills and release them right the first time - version agreement, a pre-tag gate, deterministic host-specific packages (Claude app, Claude Code, Codex/ChatGPT, Microsoft Copilot, Grok, Gemini Apps, Opal, Antigravity, local models), draft-first publishing, verification of published assets against the local build, and a dated per-host install log. Use whenever an agent prepares, tags, publishes, re-packages or verifies a skill release, sets up a skill repository or release workflow, decides which ZIP a host needs, or records that a skill was uploaded or installed somewhere.
 license: MIT
 metadata:
-  version: "0.2.1"
+  version: "0.3.0"
   repository: https://github.com/JesseRaber/github-release
 ---
 
@@ -11,7 +11,7 @@ metadata:
 
 A release is right the first time when the bytes you tested are the bytes people download, every host gets a package it accepts, and the record says which host has which version and how anyone knows.
 
-Report as: **Loaded GitHub Release v0.2.1 (SKILL.md at <path you loaded>)**. State the mode in the first line. The path lets install checks detect shadow copies and stale channels.
+Report as: **Loaded GitHub Release v0.3.0 (SKILL.md at <path you loaded>)**. State the mode in the first line. The path lets install checks detect shadow copies and stale channels.
 
 ## Choose the mode
 
@@ -31,11 +31,12 @@ For "which ZIP do I give host X?" read [host-matrix.md](references/host-matrix.m
 1. **Separate approvals.** Creating a repository, pushing, merging, tagging, creating or publishing a release, changing repository settings and installing into a host are each separate owner approvals. A request to review, build or prepare authorizes none of them. Ask immediately before the action, showing exactly what will happen.
 2. **A pushed tag starts a release build.** Gate first, tag second. Never tag a commit whose local candidate build and gate have not passed.
 3. **Draft first.** The workflow creates a draft. Verify the draft's downloaded assets against the local candidate, then the owner publishes. A failed draft is deleted and rebuilt; nothing public has to change.
-4. **Never replace published bytes.** No `--clobber`, no re-upload, no force-moved tag after publication. A defect in a published release ships as a new patch version. Prefer GitHub immutable releases.
+4. **Never replace published bytes.** No `--clobber`, no re-upload, no force-moved tag after publication, no hand-created release. A defect in a published release ships as a new patch version; the published body only gains an appended, dated "Known issues" section. Prefer GitHub immutable releases; every publish approval states whether they are ON or OFF.
 5. **Cite the tag, not `main`.** Evidence about a release comes from the tagged commit and the published assets.
 6. **Never disguise code to pass a host scan.** Omit the file from that host's package and document the omission.
 7. **Upload acceptance is not behavior.** Record what was observed: accepted, loaded, smoke-tested. Each row needs a date, version, asset hash and evidence type.
-8. **Backups never shadow installs.** Never keep a backup inside a folder a host scans for skills; put it beside that folder, or rename its `SKILL.md` to `SKILL.backup-not-loaded.md`. After every install run `scripts/check_skill_duplicates.py` over all of the host's skill folders: exactly one `SKILL.md` may carry the skill's name, at the new version — more than one is a failed install. Tell the owner to restart the host. Matching bytes and `--version` prove the files, not the load: log `files verified; host load not checked` until a check inside the host confirms it (verify-and-record.md).
+8. **The owner authors the release; the tag sits on a reviewed merge.** Commits in a release clone use the owner's identity (AI only as a `Co-Authored-By` trailer). Tag only the merge commit of the merged release PR. Notes read as released text: no candidate wording, placeholders, pre-written dates or internal IDs.
+9. **Backups never shadow installs.** Never keep a backup inside a folder a host scans for skills; put it beside that folder, or rename its `SKILL.md` to `SKILL.backup-not-loaded.md`. After every install run `scripts/check_skill_duplicates.py` over all of the host's skill folders: exactly one `SKILL.md` may carry the skill's name, at the new version — more than one is a failed install. Tell the owner to restart the host. Matching bytes and `--version` prove the files, not the load: log `files verified; host load not checked` until a check inside the host confirms it (verify-and-record.md).
 
 ## Keep evidence honest
 

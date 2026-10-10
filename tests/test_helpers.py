@@ -156,7 +156,7 @@ class CheckVersionsTests(unittest.TestCase):
             self.assertIn('extra root not found', r.stdout)
 
     def test_helper_versions(self):
-        for s in ('check_versions.py', 'verify_release.py'):
+        for s in ('check_versions.py', 'verify_release.py', 'check_skill_duplicates.py'):
             r = run(SKILL / 'scripts' / s, '--version')
             self.assertEqual(r.returncode, 0)
 
@@ -239,3 +239,160 @@ class DuplicateSkillTests(unittest.TestCase):
         run(DUP, self.root, '--name', 'demo')
         after = sorted((str(p), p.stat().st_mtime_ns) for p in self.root.rglob('*'))
         self.assertEqual(before, after)
+
+
+CV = SKILL / 'scripts' / 'check_versions.py'
+VR = SKILL / 'scripts' / 'verify_release.py'
+
+
+def mini_repo(t, notes_text, version='1.0.0'):
+    """A minimal repository with one touch point and a notes file."""
+    root = Path(t)
+    (root / 'packaging').mkdir()
+    (root / 'v.md').write_text('v%s\n' % version, encoding='utf-8')
+    (root / 'packaging' / ('RELEASE_NOTES_v%s.md' % version)).write_text(notes_text, encoding='utf-8', newline='\n')
+    cfg = root / 'cfg.json'
+    cfg.write_text(json.dumps({'files': [{'path': 'v.md', 'pattern': 'v{v}'}]}), encoding='utf-8')
+    return root, cfg
+
+
+class NotesLintTests(unittest.TestCase):
+    def check(self, text):
+        with tempfile.TemporaryDirectory() as t:
+            root, cfg = mini_repo(t, text)
+            return run(CV, '--repo', root, '--version', '1.0.0', '--config', cfg)
+
+    def test_clean_notes_pass(self):
+        r = self.check('# demo 1.0.0\n\n## Changes\n\n- Adds a lint.\n')
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn('PASS notes body lint', r.stdout)
+
+    def test_candidate_status_fails(self):
+        # Observed: two immutable releases whose body said "(candidate)" and "not released".
+        for text in ('# demo 1.0.0 (candidate)\n', 'Status: local candidate; not committed\n',
+                     'This is not released yet.\n', 'Released 2026-10-06.\n', '## Changes\n\n- \n',
+                     '# SKILL-NAME X.Y.Z\n', 'Items: TBD\n', '## Verification required before release\n'):
+            r = self.check(text)
+            self.assertEqual(r.returncode, 1, text + r.stdout)
+
+    def test_internal_ids_warn_only(self):
+        r = self.check('- Fix (session 9ea792fb-1111-2222-3333-444455556666, R-051).\n')
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn('WARN', r.stdout)
+        self.assertIn('session UUID', r.stdout)
+        self.assertIn('register/tracker row ID', r.stdout)
+
+
+class RecordEncodingTests(unittest.TestCase):
+    def run_with(self, name, data):
+        with tempfile.TemporaryDirectory() as t:
+            root, cfg = mini_repo(t, '# demo 1.0.0\n')
+            (root / name).write_bytes(data)
+            return run(CV, '--repo', root, '--version', '1.0.0', '--config', cfg)
+
+    def test_clean_record_passes(self):
+        r = self.run_with('CHANGELOG.md', b'# Changelog\n')
+        self.assertEqual(r.returncode, 0, r.stdout)
+
+    def test_damaged_records_fail(self):
+        # Observed: a PowerShell 5.1 `>>` append wrote UTF-16LE (NUL bytes) into a UTF-8 file.
+        for data, label in ((b'\xef\xbb\xbf# x\n', 'BOM'), (b'# x\n' + 'row\n'.encode('utf-16-le'), 'NUL'),
+                            (b'# x\r\n', 'CRLF'), (b'# \xff\n', 'not UTF-8')):
+            r = self.run_with('CHANGELOG.md', data)
+            self.assertEqual(r.returncode, 1, label)
+            self.assertIn(label, r.stdout)
+
+    def test_install_log_single_header(self):
+        head = b'| Date (TZ) | Version |\n|---|---|\n'
+        self.assertEqual(self.run_with('HOST_INSTALL_LOG.md', head).returncode, 0)
+        r = self.run_with('HOST_INSTALL_LOG.md', head + head)
+        self.assertEqual(r.returncode, 1)
+        self.assertIn('repeated identical table header', r.stdout)
+        # A schema change appends a new table with a different header: allowed.
+        newer = b'\n| Date (TZ) | Version | Channel |\n|---|---|---|\n'
+        self.assertEqual(self.run_with('HOST_INSTALL_LOG.md', head + newer).returncode, 0)
+
+
+class DriftTests(unittest.TestCase):
+    def test_this_repo_has_no_drift(self):
+        v = json.loads((REPO / '.claude-plugin/plugin.json').read_text())['version']
+        r = run(CV, '--repo', REPO, '--version', v, '--drift-against', SKILL)
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn('drift: 0 stale copies', r.stdout)
+
+    def test_stale_copy_fails(self):
+        with tempfile.TemporaryDirectory() as t:
+            root, cfg = mini_repo(t, '# demo 1.0.0\n')
+            (root / 'packaging' / 'check_versions.py').write_text('# old copy\n', encoding='utf-8')
+            (root / 'HOST_INSTALL_LOG.md').write_text('| Date | Version |\n|---|---|\n', encoding='utf-8')
+            r = run(CV, '--repo', root, '--version', '1.0.0', '--config', cfg, '--drift-against', SKILL)
+            self.assertEqual(r.returncode, 1)
+            self.assertIn('packaging/check_versions.py differs from', r.stdout)
+            self.assertIn('HOST_INSTALL_LOG.md current (last) table header differs', r.stdout)
+
+
+class VerifyReleaseMetadataTests(unittest.TestCase):
+    def setUp(self):
+        self.t = Path(tempfile.mkdtemp(prefix='gr-vr-'))
+        self.assets = self.t / 'assets'
+        self.assets.mkdir()
+        z = self.assets / 'demo-1.0.0-UNIVERSAL-skill.zip'
+        with zipfile.ZipFile(z, 'w') as zf:
+            zf.writestr('demo/SKILL.md', 'x')
+        (self.assets / 'SHA256SUMS.txt').write_text('%s  %s\n' % (sha(z), z.name), encoding='utf-8')
+        self.notes = self.t / 'RELEASE_NOTES_v1.0.0.md'
+        self.notes.write_text('# demo 1.0.0\n\n- Change.\n', encoding='utf-8')
+        self.rel = {'tag_name': 'v1.0.0', 'draft': False, 'immutable': True, 'name': 'demo v1.0.0',
+                    'author': {'login': 'github-actions[bot]'}, 'body': '# demo 1.0.0\r\n\r\n- Change.\r\n',
+                    'assets': [{'name': n, 'state': 'uploaded', 'digest': 'sha256:' + sha(self.assets / n)}
+                               for n in (z.name, 'SHA256SUMS.txt')]}
+
+    def tearDown(self):
+        shutil.rmtree(self.t)
+
+    def verify(self, **change):
+        rel = dict(self.rel, **change)
+        j = self.t / 'rel.json'
+        j.write_text(json.dumps(rel), encoding='utf-8')
+        return run(VR, '--assets', self.assets, '--version', '1.0.0', '--release-json', j, '--notes', self.notes)
+
+    def test_workflow_release_passes(self):
+        r = self.verify()
+        self.assertEqual(r.returncode, 0, r.stdout)
+        self.assertIn('downloaded 2 of 2 listed assets', r.stdout)
+        self.assertIn('release author=github-actions[bot]', r.stdout)
+
+    def test_hand_created_or_bad_title_fails(self):
+        r = self.verify(author={'login': 'someone'})
+        self.assertEqual(r.returncode, 1)
+        self.assertIn('hand-created', r.stdout)
+        r = self.verify(name='v1.0.0 draft')
+        self.assertEqual(r.returncode, 1)
+
+    def test_incomplete_download_reported_first(self):
+        assets = list(self.rel['assets']) + [{'name': 'extra.zip', 'state': 'uploaded', 'digest': 'sha256:00'}]
+        r = self.verify(assets=assets)
+        self.assertEqual(r.returncode, 1)
+        first = [l for l in r.stdout.splitlines() if l.strip()][0]
+        self.assertIn('downloaded 2 of 3 listed assets', first)
+
+    def test_body_edit_policy(self):
+        ok = self.rel['body'] + '\n## Known issues (added 2026-10-10)\n\n- See 1.0.1.\n'
+        self.assertEqual(self.verify(body=ok).returncode, 0)
+        r = self.verify(body='# demo 1.0.0\n\n- Different change.\n')
+        self.assertEqual(r.returncode, 1)
+        self.assertIn('release body differs', r.stdout)
+
+
+class CiTemplateTests(unittest.TestCase):
+    def test_ci_runs_on_release_branches_and_dispatch(self):
+        text = (SKILL / 'templates' / 'ci.yml').read_text(encoding='utf-8')
+        self.assertIn('workflow_dispatch', text)
+        self.assertIn("'release/**'", text)
+
+    def test_actions_pinned_by_sha(self):
+        import re
+        for wf in ('ci.yml', 'release.yml'):
+            for line in (SKILL / 'templates' / wf).read_text(encoding='utf-8').splitlines():
+                if 'uses: actions/' in line:
+                    self.assertRegex(line, r'@[0-9a-f]{40} # v\d+\.\d+\.\d+$', line)

@@ -6,7 +6,7 @@
 | Claude Code `/plugin install` (not the Claude app uploader) | `…-claude-code-plugin.zip` |
 | Codex / ChatGPT plugin | `…-codex-chatgpt-plugin.zip` |
 | Microsoft Copilot agent skill upload, **Grok** | `…-microsoft-copilot-agent-only.zip` |
-| Gemini Apps skill upload | `…-gemini-apps-only.zip` |
+| Gemini Spark skill upload (regular Gemini chat rejects skills with scripts) | `…-gemini-apps-only.zip` |
 | Opal skill import | `…-opal-only.zip` |
 
 The folder `github-release/` **is** the skill. Keep `SKILL.md`, `references/`, `scripts/` and `templates/` together.
@@ -18,7 +18,7 @@ Host-specific packages leave some files out: Gemini Apps omits the `.yml` workfl
 Many apps (Codex observed) load **every** `SKILL.md` anywhere under their skills folder. Never keep the old copy inside that folder: move it beside it (for example `~/.codex/skill-backups/`), or rename its `SKILL.md` to `SKILL.backup-not-loaded.md`. Then check that only one copy carries the name and restart the app:
 
 ```bash
-python github-release/scripts/check_skill_duplicates.py ~/.codex/skills --name github-release --expect-version 0.2.1
+python github-release/scripts/check_skill_duplicates.py ~/.codex/skills --name github-release --expect-version 0.3.0
 ```
 
 ## Claude app
@@ -33,7 +33,7 @@ Point the system prompt or context loader at `github-release/SKILL.md`.
 
 > Is my skill repository ready to tag v1.0.0?
 
-A loaded skill states **Mode: Gate** first and reports **Loaded GitHub Release v0.2.1 (SKILL.md at <path>)**.
+A loaded skill states **Mode: Gate** first and reports **Loaded GitHub Release v0.3.0 (SKILL.md at <path>)**.
 
 ## Requirements
 
