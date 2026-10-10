@@ -250,7 +250,7 @@ def mini_repo(t, notes_text, version='1.0.0'):
     root = Path(t)
     (root / 'packaging').mkdir()
     (root / 'v.md').write_text('v%s\n' % version, encoding='utf-8')
-    (root / 'packaging' / ('RELEASE_NOTES_v%s.md' % version)).write_text(notes_text, encoding='utf-8', newline='\n')
+    (root / 'packaging' / ('RELEASE_NOTES_v%s.md' % version)).write_bytes(notes_text.encode('utf-8'))
     cfg = root / 'cfg.json'
     cfg.write_text(json.dumps({'files': [{'path': 'v.md', 'pattern': 'v{v}'}]}), encoding='utf-8')
     return root, cfg
