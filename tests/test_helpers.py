@@ -94,6 +94,49 @@ class BuilderTests(unittest.TestCase):
         self.assertIn('DIFFERS', r.stdout)
 
 
+class VerifierEvidenceTests(unittest.TestCase):
+    def test_state_checks_with_valid_assets_and_metadata(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            assets = root / 'assets'
+            assets.mkdir()
+            name = 'github-release-0.2.1-test.zip'
+            archive = assets / name
+            with zipfile.ZipFile(archive, 'w') as z:
+                z.writestr('github-release/SKILL.md', '# Test fixture\n')
+            sums = assets / 'SHA256SUMS.txt'
+            sums.write_text(sha(archive) + '  ' + name + '\n', encoding='utf-8')
+            metadata = root / 'release.json'
+            data = {'tag_name': 'v0.2.1', 'draft': False, 'immutable': True,
+                    'assets': [{'name': p.name, 'state': 'uploaded',
+                                'size': p.stat().st_size, 'digest': 'sha256:' + sha(p)}
+                               for p in (archive, sums)]}
+            for draft, immutable, expected in ((False, True, 0), (True, True, 1),
+                                               (False, False, 1)):
+                with self.subTest(draft=draft, immutable=immutable):
+                    data.update(draft=draft, immutable=immutable)
+                    metadata.write_text(json.dumps(data), encoding='utf-8')
+                    r = run(SKILL / 'scripts/verify_release.py', '--assets', assets,
+                            '--version', '0.2.1', '--release-json', metadata,
+                            '--expect-published', '--expect-immutable')
+                    self.assertEqual(r.returncode, expected, r.stdout + r.stderr)
+                    self.assertIn('GitHub metadata', r.stdout)
+
+    def test_empty_checksum_manifest_fails(self):
+        with tempfile.TemporaryDirectory() as td:
+            (Path(td) / 'SHA256SUMS.txt').write_text('', encoding='utf-8')
+            r = run(SKILL / 'scripts/verify_release.py', '--assets', td)
+            self.assertEqual(r.returncode, 1, r.stdout)
+            self.assertIn('contains no assets', r.stdout)
+
+    def test_release_state_flags_require_metadata(self):
+        for flag in ('--expect-published', '--expect-immutable'):
+            with self.subTest(flag=flag):
+                r = run(SKILL / 'scripts/verify_release.py', '--assets', REPO, flag)
+                self.assertEqual(r.returncode, 2, r.stdout)
+                self.assertIn('require --release-json', r.stderr)
+
+
 class CheckVersionsTests(unittest.TestCase):
     def test_repo_versions_and_workflow(self):
         v = json.loads((REPO / '.claude-plugin/plugin.json').read_text())['version']

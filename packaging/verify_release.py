@@ -52,6 +52,8 @@ def check_sums(assets, out):
         out.append(('FAIL', 'no %s in %s' % (SUMS, assets)))
         return {}
     listed = read_sums(sums_path)
+    if not listed:
+        out.append(('FAIL', 'SHA256SUMS contains no assets'))
     present = {p.name: p for p in assets.iterdir() if p.is_file() and p.name != SUMS}
     actual = {}
     for name, want in sorted(listed.items()):
@@ -149,6 +151,8 @@ def main(argv=None):
         print('verify_release ' + __version__)
         return 0
     args = ap.parse_args(argv)
+    if (args.expect_published or args.expect_immutable) and not args.release_json:
+        ap.error('--expect-published and --expect-immutable require --release-json')
     if not args.assets:
         print('need --assets DIR')
         return 2
