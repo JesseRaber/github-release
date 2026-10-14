@@ -13,7 +13,9 @@ python packaging/check_versions.py --repo . --version 1.2.0 --previous 1.1.0
 Typical touch points:
 
 - `skills/<name>/SKILL.md` frontmatter `metadata.version` (source of truth)
+- `SKILL.md` description and top-of-body identity: same version, canonical repository URL and author spelling; inspect the installed host's visible page before claiming those fields display there
 - `.claude-plugin/plugin.json`, `.codex-plugin/plugin.json` `version`
+- plugin and marketplace descriptions that display version, repository and author (where the host exposes those fields)
 - every helper script's `__version__` / version constant
 - "Report as: Loaded ... vX" line in SKILL.md
 - install guides' "Expected loaded version"
@@ -37,6 +39,10 @@ The highest level among the release's changes wins. Owner override is allowed an
 `--previous-from-changelog` is enabled in the CI/release templates: it uses the preceding unique version heading and refuses a changelog whose first heading is not the requested version. An explicit `--previous` must agree when both are used. Configure legitimate historical references in the existing history list.
 
 `--previous` lists every remaining mention of the old version outside history files (CHANGELOG, older release notes). Each one is either a stale reference to fix or history to leave; decide per line. (Observed failure: a Copilot install guide still said the previous version after a release.)
+
+### Reuse evidence only for unchanged surfaces
+
+Before repeating a prior check, record the current source commit or content hash, the files changed since that check, and any relevant configuration, package and host state. Reuse a dated result only when its exact source and checked surface still match; cite that result and its limits. Rerun each check affected by changed files or settings. For example, a README edit needs a fresh render and link review, while an unchanged host layout can retain a dated check if the package and host state match. An unavailable or changed surface is `not-run` or unresolved, never inherited PASS. Record repeated and rerun checks so later releases can measure effort. Tag-target, downloaded draft-asset and downloaded published-asset integrity checks always run at their own boundaries, even for a text-only patch.
 
 ## 2. Build the local candidate
 
@@ -93,10 +99,10 @@ Run in order. Stop at the first fail.
 | G8c | Tag kind matches the repository's convention — mixed lightweight/annotated tags break `v<tag>^{}` peeling and citation | `git cat-file -t v<previous>` (expect `tag` for annotated) |
 | G9 | Each host package matches host-matrix.md rules for this release | compare package listing with Table A |
 | G10 | Tag does not exist yet locally or remotely | `git ls-remote --tags origin vX.Y.Z` empty |
-| G11 | Out-of-repo version touch points: the wiki (`<repo>.wiki.git`), marketplace listings and host store descriptions name the new version or are explicitly listed as not-run | `check_versions.py --previous X.Y.Z --extra-root ../wiki-clone`; anything unreachable gets a `not-run` line, never a silent pass |
+| G11 | Out-of-repo version touch points: distinguish the live wiki and host listings from in-repo mirrors. Each live destination names the new version or is explicitly `not-run` with a reason; a mirror check proves only the mirror | `check_versions.py --previous X.Y.Z --extra-root ../wiki-clone` checks that clone's content; separately identify whether the live wiki or listing was read. Anything unreachable gets `not-run`, never a silent pass |
 | G12 | Visual check before a public push: README renders (tables, any diagram), links and image alt text are current, and the social-preview image is not contradicted by this release's content. Update assets only when content changed | open the rendered README on the branch; repository settings → social preview (owner) |
 | G13 | One-host trial of the **exact candidate**: install one candidate archive on one host per verify-and-record.md (backup outside scanned folders, duplicate check), run the check prompt, save the reply as an evidence file. `not-run` is allowed with a reason | evidence file path; candidate archive sha256. Observed: a one-host trial found 6 defects before the tag; releases without one were superseded within hours 5 times |
-| G14 | Repository copies match the skill's current templates: `packaging/check_versions.py`, `verify_release.py`, `build_packages.py`, `.github/workflows/*.yml`, `HOST_INSTALL_LOG.md` header. List stale copies; update them or record why not | `check_versions.py --drift-against <path to installed github-release skill>` |
+| G14 | Compare repository copies with the skill's current templates: `packaging/check_versions.py`, `verify_release.py`, `build_packages.py`, `.github/workflows/*.yml`, `HOST_INSTALL_LOG.md` header. For each difference report `matched`, `justified repository-specific exception` with the exact file and reason, or `unresolved drift`; never turn a customized repository into a blanket PASS | `check_versions.py --drift-against <path to installed github-release skill>` supplies the comparison; review and record exceptions separately |
 
 ## Workflow hardening and lint limits
 
@@ -118,13 +124,15 @@ Workflow lint handles literal run blocks and literal `gh release create/view/lis
 ## 5. Gate report format
 
 ```text
-Gate: <skill> v<version> at <commit>  —  PASS | FAIL | INCOMPLETE
+Gate: <skill> v<version> at <commit>  —  PASS | PASS WITH EXCEPTION | FAIL | INCOMPLETE
 Bump: minor (trigger: new gate check G13)
 G1 pass  clean tree, HEAD 1a2b3c4, author <owner noreply>
 G5 pass  tests exit=0 (31 run); CI run <link>
 G13 not-run  no host available in this session; owner to trial <archive>
+Overall exception: G13 not-run (reason above); this report does not establish host behavior for this candidate.
 ...
 Candidate: <folder>, SHA256SUMS sha256 <first 12>
 ```
 
 INCOMPLETE is not PASS. Do not propose a tag on INCOMPLETE.
+Use `PASS WITH EXCEPTION` only when all required checks passed and an expressly allowed `not-run` check, such as G13, has a reason and owner-facing follow-up. State that exception beside the headline result and in the approval block; do not write an unqualified PASS. Any unresolved G11 destination or G14 drift remains `INCOMPLETE` until resolved or explicitly accepted under the project's rules.

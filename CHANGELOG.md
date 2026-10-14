@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.4.0
+
+Minor: release-gate result meaning and evidence-reuse guidance changed; skill identity is visible in source and host packages.
+
+- The skill entrypoint and supported plugin/marketplace descriptions identify the version and Jesse Raber. The entrypoint also names the canonical repository URL. Version touch-point checks and a six-package identity regression check cover these fields; host UI visibility still requires in-host observation.
+- Gate guidance reuses prior evidence only for matching source, configuration, package and host surfaces, reruns affected checks, and always verifies tag, draft and published integrity at their boundaries. G11 separates live wiki/store state from mirrors; G14 labels matched copies, justified exceptions and unresolved drift; an allowed G13 not-run appears as `PASS WITH EXCEPTION` rather than an unqualified PASS.
+- Procedure notes cover device-copy executable-mode drift, REST PR creation when GraphQL is blocked, repository immutable-setting checks instead of draft-state inference, and shallow-clone tracking-ref false alarms.
+- Ordinary GitHub edits remain outside this Agent Skill-release workflow. A separate short PR workflow is proposed in the project review record.
+
 ## 0.3.0
 
 Minor: new gate checks, a notes and record lint, a new helper and changed helper output.

@@ -37,6 +37,12 @@ Use in **Setup**. Draft everything locally first; creating the GitHub repository
 - Actions pinned by full commit SHA with the release tag in a trailing comment (`# v7.0.1`); bump the pins when an action's runtime is deprecated, and resolve the SHA from the tag yourself (`git ls-remote https://github.com/actions/<name> refs/tags/<tag>`).
 - README opens with a "which ZIP do I download?" table generated from host-matrix.md.
 
+## Repository transport and mode checks
+
+When copying files from a device or bridge into a Git clone, do not use `cp -a` for source files: preserved device modes can turn ordinary files into `100755`. Restore affected files from the base tree, apply the intended content change, and inspect `git diff --summary` for unintended mode changes before committing. A shallow clone may lack a local tracking ref even after a successful push; compare the remote ref and expected commit directly before calling a stop-hook report of "unpushed" a failure. Neither observation substitutes for checking the remote result.
+
+If `gh pr create` fails because its GraphQL request is blocked, create the PR through the GitHub REST pulls endpoint (`gh api -X POST repos/<owner>/<repo>/pulls`) with the same reviewed title, body, head and base, then read back the PR. Keep the project's separate push and PR authorization boundaries.
+
 ## Approval order
 
 1. Owner reviews the local draft repository.

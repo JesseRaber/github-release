@@ -6,6 +6,14 @@
     },
     {
       "path": "skills/github-release/SKILL.md",
+      "pattern": "^description: v{v} GitHub Release by Jesse Raber"
+    },
+    {
+      "path": "skills/github-release/SKILL.md",
+      "pattern": "^\\*\\*Version:\\*\\* {v} .*https://github.com/JesseRaber/github-release .*Jesse Raber"
+    },
+    {
+      "path": "skills/github-release/SKILL.md",
       "pattern": "Loaded GitHub Release v{v}"
     },
     {
@@ -33,8 +41,24 @@
       "pattern": "\"version\": \"{v}\""
     },
     {
+      "path": ".claude-plugin/plugin.json",
+      "pattern": "\"description\": \"v{v} GitHub Release by Jesse Raber"
+    },
+    {
       "path": ".codex-plugin/plugin.json",
       "pattern": "\"version\": \"{v}\""
+    },
+    {
+      "path": ".codex-plugin/plugin.json",
+      "pattern": "\"description\": \"v{v} GitHub Release by Jesse Raber"
+    },
+    {
+      "path": ".codex-plugin/plugin.json",
+      "pattern": "\"longDescription\": \"GitHub Release v{v} by Jesse Raber \\(https://github.com/JesseRaber/github-release\\)"
+    },
+    {
+      "path": ".claude-plugin/marketplace.json",
+      "pattern": "\"description\": \"v{v} GitHub Release Agent Skill by Jesse Raber"
     },
     {
       "path": "packaging/INSTALL-universal.md",
