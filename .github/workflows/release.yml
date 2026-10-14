@@ -2,8 +2,8 @@
 # Copy to .github/workflows/release.yml. On a pushed tag vX.Y.Z it gates, builds,
 # and creates a DRAFT release. A person publishes the draft after verifying it.
 # It never replaces assets of an existing release.
-# Action and validator pins are copied from multi-agent-folder-cleanup v1.6.1;
-# review them before first use.
+# Actions are pinned by full commit SHA with the release tag in a comment (resolved
+# 2026-10-09); the validator is pinned by commit. Review pins before first use.
 name: Release
 
 on:
@@ -17,20 +17,26 @@ on:
         required: true
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  release:
+  build:
+    outputs:
+      version: ${{ steps.ver.outputs.version }}
+      skill: ${{ steps.ver.outputs.skill }}
+      artifact-id: ${{ steps.packages.outputs.artifact-id }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false  # later steps run downloaded code; do not leave the write token in .git
-      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: '3.11'
       - name: Install validation dependency
-        run: python -m pip install --disable-pip-version-check PyYAML
+        run: |
+          printf '%s\n' 'PyYAML==6.0.2 --hash=sha256:3ad2a3decf9aaba3d29c8f537ac4b243e36bef957511b4766cb0057d32b0be85' > "$RUNNER_TEMP/validation-requirements.txt"
+          python -m pip install --disable-pip-version-check --only-binary=:all: --require-hashes -r "$RUNNER_TEMP/validation-requirements.txt"
 
       - name: Resolve version and skill
         id: ver
@@ -39,9 +45,82 @@ jobs:
         run: |
           if [ "$GITHUB_EVENT_NAME" = "workflow_dispatch" ]; then VERSION="$INPUT_VERSION"; else VERSION="${GITHUB_REF_NAME#v}"; fi
           if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then echo "Refusing non-semver version: $VERSION"; exit 1; fi
-          SKILL=$(python3 -c "import json;print(json.load(open('packaging/packages.json'))['skill'])")
+          SKILL=$(python packaging/build_packages.py --describe | python -c 'import json,sys; print(json.load(sys.stdin)["skill"])')
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "skill=$SKILL" >> "$GITHUB_OUTPUT"
+
+      - name: Versions agree, notes lint (no candidate wording), record encoding
+        env:
+          VERSION: ${{ steps.ver.outputs.version }}
+        run: |
+          python3 packaging/check_versions.py --repo . --config packaging/version_files.json \
+            --version "$VERSION" --previous-from-changelog --workflow .github/workflows/release.yml
+
+      - name: Validate skill frontmatter
+        env:
+          SKILL: ${{ steps.ver.outputs.skill }}
+        run: |
+          python3 - "$SKILL" <<'EOF'
+          import sys, yaml
+          sys.path.insert(0, 'packaging')
+          from build_packages import frontmatter
+          name = sys.argv[1]
+          fm = yaml.safe_load(frontmatter(open(f'skills/{name}/SKILL.md', 'rb').read())[0])
+          if not isinstance(fm, dict) or fm.get('name') != name:
+              sys.exit('frontmatter name does not match configured skill')
+          desc = fm.get('description')
+          if not isinstance(desc, str) or not desc.strip() or len(desc) > 1024:
+              sys.exit('description missing or over 1024 chars')
+          print('Frontmatter OK')
+          EOF
+
+      - name: Run OpenAI skill validator (commit and SHA-256 pinned)
+        env:
+          SKILL: ${{ steps.ver.outputs.skill }}
+        run: |
+          curl --fail --silent --show-error --location \
+            https://raw.githubusercontent.com/openai/skills/49f948faa9258a0c61caceaf225e179651397431/skills/.system/skill-creator/scripts/quick_validate.py \
+            --output /tmp/openai-quick-validate.py
+          echo "6cc9dc3199c935916cf6f73fcbbbb0e3bb1b58c8f5109fefa499978908164f51  /tmp/openai-quick-validate.py" | sha256sum --check
+          python /tmp/openai-quick-validate.py "skills/$SKILL"
+
+      - name: Run tests
+        run: if [ -d tests ]; then python -m unittest discover -s tests -v; else echo "no tests directory"; fi
+
+      - name: Build and verify packages
+        run: |
+          set -euo pipefail
+          rm -rf dist
+          python3 packaging/build_packages.py dist --status "release build ${GITHUB_REF_NAME}"
+          cat dist/SHA256SUMS.txt
+          if find dist -name __pycache__ | grep -q .; then echo "__pycache__ leaked"; exit 1; fi
+
+      - name: Upload build artifacts
+        id: packages
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: packages-${{ steps.ver.outputs.version }}
+          path: dist/
+
+  draft:
+    needs: build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact-id }}
+          path: dist/
+          merge-multiple: true
+      - name: Verify downloaded build artifact
+        env:
+          VERSION: ${{ needs.build.outputs.version }}
+        run: python3 packaging/verify_release.py --assets dist --version "$VERSION"
 
       - name: Refuse if a release for this tag already exists
         if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
@@ -53,63 +132,17 @@ jobs:
             exit 1
           fi
 
-      - name: Versions agree and notes exist
-        run: |
-          python3 packaging/check_versions.py --repo . --config packaging/version_files.json \
-            --version "${{ steps.ver.outputs.version }}" --workflow .github/workflows/release.yml
-
-      - name: Validate skill frontmatter
-        run: |
-          python3 - "${{ steps.ver.outputs.skill }}" <<'EOF'
-          import sys, yaml
-          name = sys.argv[1]
-          text = open(f'skills/{name}/SKILL.md', encoding='utf-8').read()
-          if not text.startswith('---'):
-              sys.exit('SKILL.md has no YAML frontmatter')
-          fm = yaml.safe_load(text.split('---')[1])
-          if fm.get('name') != name:
-              sys.exit(f"frontmatter name {fm.get('name')!r} does not match {name!r}")
-          if not fm.get('description') or len(fm['description']) > 1024:
-              sys.exit('description missing or over 1024 chars')
-          print('Frontmatter OK')
-          EOF
-
-      - name: Run OpenAI skill validator (pinned)
-        run: |
-          curl --fail --silent --show-error --location \
-            https://raw.githubusercontent.com/openai/skills/49f948faa9258a0c61caceaf225e179651397431/skills/.system/skill-creator/scripts/quick_validate.py \
-            --output /tmp/openai-quick-validate.py
-          python /tmp/openai-quick-validate.py skills/${{ steps.ver.outputs.skill }}
-
-      - name: Run tests
-        run: if [ -d tests ]; then python -m unittest discover -s tests -v; else echo "no tests directory"; fi
-
-      - name: Build and verify packages
-        run: |
-          set -euo pipefail
-          rm -rf dist
-          python3 packaging/build_packages.py dist --status "release build ${GITHUB_REF_NAME}"
-          rm -f dist/BUILD_EVIDENCE.json
-          cat dist/SHA256SUMS.txt
-          if find dist -name __pycache__ | grep -q .; then echo "__pycache__ leaked"; exit 1; fi
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: packages-${{ steps.ver.outputs.version }}
-          path: dist/
-
       - name: Create DRAFT release
-        if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.build.outputs.version }}
+          SKILL: ${{ needs.build.outputs.skill }}
         run: |
           set -euo pipefail
-          VERSION="${{ steps.ver.outputs.version }}"
           NOTES="packaging/RELEASE_NOTES_v$VERSION.md"
           if [ ! -f "$NOTES" ]; then echo "Missing $NOTES; refusing to create a release without reviewed notes."; exit 1; fi
           gh release create "$GITHUB_REF_NAME" --draft --verify-tag \
-            --title "${{ steps.ver.outputs.skill }} v$VERSION" \
+            --title "$SKILL v$VERSION" \
             --notes-file "$NOTES" \
             dist/*.zip dist/SHA256SUMS.txt
-          echo "Draft created. Verify the downloaded assets (publish.md section 3); only then publish it (publish.md section 4)."
+          echo "Draft created. Verify the downloaded assets before publishing."

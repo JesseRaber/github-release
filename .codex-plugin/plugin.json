@@ -1,6 +1,6 @@
 {
   "name": "github-release",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Create GitHub repositories for Agent Skills and release them right the first time: version gate, deterministic host packages, draft-first publishing, published-asset verification and a per-host install log.",
   "skills": "./skills/",
   "author": {

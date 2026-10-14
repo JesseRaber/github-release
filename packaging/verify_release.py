@@ -8,6 +8,8 @@ local candidate build. Never downloads, uploads or changes anything.
 Usage:
   python verify_release.py --assets DIR [--version X.Y.Z]
                            [--release-json FILE] [--candidate DIR]
+                           [--notes packaging/RELEASE_NOTES_vX.Y.Z.md]
+                           [--expected-author github-actions[bot]]
 
 Exit 0 when every requested check passed, 1 when any failed, 2 on usage errors.
 """
@@ -16,11 +18,15 @@ import hashlib
 import io
 import json
 from pathlib import Path
+import re
 import sys
 import zipfile
 
-__version__ = '0.2.1'
+__version__ = '0.3.0'
 SUMS = 'SHA256SUMS.txt'
+WORKFLOW_AUTHOR = 'github-actions[bot]'
+LOCAL_EVIDENCE = 'BUILD_EVIDENCE.json'
+KNOWN_ISSUES = re.compile(r'^#{2,3} Known issues \(added \d{4}-\d{2}-\d{2}', re.I)
 
 
 def safe_stdout():
@@ -38,11 +44,20 @@ def sha256(path):
 
 def read_sums(path):
     rows = {}
-    for line in path.read_text(encoding='utf-8-sig').splitlines():
+    for number, line in enumerate(path.read_text(encoding='utf-8-sig').splitlines(), 1):
         if not line.strip():
             continue
-        digest, name = line.split(None, 1)
-        rows[name.lstrip('*').strip()] = digest.lower()
+        match = re.fullmatch(r'([0-9a-fA-F]{64})\s+\*?([^\s/\\:]+)', line.strip())
+        if not match:
+            raise ValueError('malformed checksum line %d' % number)
+        digest, name = match.groups()
+        if name in ('.', '..', SUMS, LOCAL_EVIDENCE) or name in rows:
+            raise ValueError('duplicate or reserved checksum filename: %s' % name)
+        rows[name] = digest.lower()
+    if not rows:
+        raise ValueError('empty checksum manifest')
+    if not any(name.endswith('.zip') for name in rows):
+        raise ValueError('checksum manifest contains no release archives')
     return rows
 
 
@@ -51,7 +66,15 @@ def check_sums(assets, out):
     if not sums_path.is_file():
         out.append(('FAIL', 'no %s in %s' % (SUMS, assets)))
         return {}
-    listed = read_sums(sums_path)
+    try:
+        listed = read_sums(sums_path)
+    except (OSError, UnicodeError, ValueError) as e:
+        out.append(('FAIL', '%s: %s' % (SUMS, e)))
+        return {}
+    links = [p.name for p in assets.iterdir() if p.is_symlink()]
+    if sums_path.is_symlink() or links:
+        out.append(('FAIL', 'linked assets are not allowed: %s' % links))
+        return {}
     present = {p.name: p for p in assets.iterdir() if p.is_file() and p.name != SUMS}
     actual = {}
     for name, want in sorted(listed.items()):
@@ -63,9 +86,26 @@ def check_sums(assets, out):
         out.append(('PASS' if got == want else 'FAIL',
                     '%s sha256 %s %s' % (name, got[:12], 'matches SHA256SUMS' if got == want else '!= ' + want[:12])))
     for name in sorted(set(present) - set(listed)):
-        if name.endswith('.zip'):
-            out.append(('FAIL', 'archive not listed in SHA256SUMS: %s' % name))
+        if name != LOCAL_EVIDENCE:
+            out.append(('FAIL', 'file not listed in SHA256SUMS: %s' % name))
+    evidence = assets / LOCAL_EVIDENCE
+    if evidence.exists():
+        check_evidence(evidence, listed, out)
     return actual
+
+
+def check_evidence(path, listed, out):
+    """Local evidence is not published; if supplied it must describe these ZIPs."""
+    try:
+        evidence = json.loads(path.read_text(encoding='utf-8'))
+        packages = evidence['packages']
+        expected = {n: d for n, d in listed.items() if n.endswith('.zip')}
+        got = {n: item['sha256'] for n, item in packages.items()}
+        if got != expected:
+            raise ValueError('package set or hashes differ from SHA256SUMS')
+        out.append(('PASS', '%s agrees with checksum manifest' % path.name))
+    except (OSError, UnicodeError, ValueError, KeyError, TypeError, AttributeError) as e:
+        out.append(('FAIL', '%s: invalid build evidence: %s' % (path.name, e)))
 
 
 def check_zips(assets, actual, version, out):
@@ -84,12 +124,75 @@ def check_zips(assets, actual, version, out):
             out.append(('FAIL', '%s is not a valid zip: %s' % (name, e)))
 
 
-def check_release_json(path, assets, version, out, expect_published=False, expect_immutable=False):
-    data = json.loads(Path(path).read_text(encoding='utf-8-sig'))
+def load_release(path, out):
+    try:
+        data = json.loads(Path(path).read_text(encoding='utf-8-sig'))
+    except (OSError, UnicodeError, ValueError) as e:
+        out.append(('FAIL', 'invalid release JSON: %s' % e))
+        return None
     if not isinstance(data, dict):
         out.append(('FAIL', 'release JSON must be ONE release object, not a %s; select it with '
                             "--jq '.[] | select(.tag_name==\"vX.Y.Z\")'" % type(data).__name__))
+        return None
+    entries = data.get('assets')
+    if not isinstance(data.get('author') or {}, dict) or not isinstance(data.get('name') or '', str):
+        out.append(('FAIL', 'invalid release author/title metadata'))
+        return None
+    if not isinstance(entries, list) or not entries:
+        out.append(('FAIL', 'release JSON has no asset list'))
+        return None
+    names = set()
+    for entry in entries:
+        name = entry.get('name') if isinstance(entry, dict) else None
+        if (not isinstance(name, str) or not re.fullmatch(r'[^\s/\\:]+', name)
+                or name in ('.', '..') or name in names
+                or not isinstance(entry.get('digest') or '', str)):
+            out.append(('FAIL', 'invalid or duplicate release asset metadata'))
+            return None
+        names.add(name)
+    return data
+
+
+def count_downloads(assets, data, out):
+    """Report first, so an incomplete download is visible before any per-file FAIL."""
+    listed = [a.get('name') for a in data.get('assets', [])]
+    got = sum(1 for n in listed if (assets / n).is_file())
+    out.append(('INFO' if got == len(listed) else 'FAIL',
+                'downloaded %d of %d listed assets' % (got, len(listed))))
+
+
+def check_identity(data, version, expected_author, out):
+    author = (data.get('author') or {}).get('login')
+    title = data.get('name')
+    out.append(('INFO', 'release author=%s title=%r' % (author, title)))
+    if author != expected_author:
+        out.append(('FAIL', 'release created by %s, not %s: hand-created releases are not allowed '
+                            '(publish.md Never)' % (author, expected_author)))
+    if version and not (title or '').endswith(' v' + version):
+        out.append(('FAIL', 'release title %r does not end with " v%s" (workflow title is "<skill> v<version>")' % (title, version)))
+
+
+def _norm(text):
+    return '\n'.join(l.rstrip() for l in text.replace('\r\n', '\n').strip().split('\n'))
+
+
+def check_body(data, notes_path, out):
+    body = _norm(data.get('body') or '')
+    notes = _norm(Path(notes_path).read_text(encoding='utf-8-sig'))
+    if body == notes:
+        out.append(('PASS', 'release body == %s' % Path(notes_path).name))
         return
+    if body.startswith(notes):
+        extra = body[len(notes):].lstrip('\n')
+        if KNOWN_ISSUES.match(extra):
+            out.append(('PASS', 'release body == notes file + appended dated Known issues section (publish.md section 5)'))
+            return
+    out.append(('FAIL', 'release body differs from %s (only an appended "## Known issues (added YYYY-MM-DD)" '
+                        'section is allowed after publish)' % Path(notes_path).name))
+
+
+def check_release_json(data, assets, version, out, expect_published=False, expect_immutable=False,
+                       allow_missing_digest=False):
     tag = data.get('tag_name')
     if version and tag != 'v' + version:
         out.append(('FAIL', 'release tag %r is not v%s' % (tag, version)))
@@ -100,7 +203,7 @@ def check_release_json(path, assets, version, out, expect_published=False, expec
     if expect_immutable and data.get('immutable') is not True:
         out.append(('FAIL', 'release is not immutable'))
     gh = {a['name']: a for a in data.get('assets', [])}
-    local = {p.name for p in assets.iterdir() if p.is_file()}
+    local = {p.name for p in assets.iterdir() if p.is_file() and p.name != LOCAL_EVIDENCE}
     for name in sorted(set(gh) - local):
         out.append(('FAIL', 'on GitHub but not downloaded: %s' % name))
     for name in sorted(set(gh) & local):
@@ -109,6 +212,9 @@ def check_release_json(path, assets, version, out, expect_published=False, expec
         if a.get('state') not in (None, 'uploaded'):
             out.append(('FAIL', '%s state is %s' % (name, a.get('state'))))
         if not d.startswith('sha256:'):
+            if not allow_missing_digest:
+                out.append(('FAIL', '%s: GitHub returned no sha256 digest' % name))
+                continue
             out.append(('WARN', '%s: GitHub returned no sha256 digest; size-only check' % name))
             ok = a.get('size') == (assets / name).stat().st_size
             out.append(('PASS' if ok else 'FAIL', '%s size %s' % (name, a.get('size'))))
@@ -122,6 +228,20 @@ def check_release_json(path, assets, version, out, expect_published=False, expec
 
 def check_candidate(candidate, assets, actual, out):
     cand = Path(candidate)
+    if not cand.is_dir():
+        out.append(('FAIL', 'candidate folder not found: %s' % cand))
+        return
+    candidate_out = []
+    check_sums(cand, candidate_out)
+    if not (cand / LOCAL_EVIDENCE).is_file():
+        candidate_out.append(('FAIL', 'missing candidate %s' % LOCAL_EVIDENCE))
+    out.extend((status, 'candidate: ' + msg) for status, msg in candidate_out)
+    try:
+        released = read_sums(assets / SUMS)
+        expected = read_sums(cand / SUMS)
+        out.append(('PASS' if released == expected else 'FAIL', 'candidate checksum manifest matches release'))
+    except (OSError, UnicodeError, ValueError) as e:
+        out.append(('FAIL', 'candidate checksum comparison: %s' % e))
     names = sorted(n for n in actual if n.endswith('.zip'))
     cand_zips = {p.name for p in cand.glob('*.zip')}
     for name in names:
@@ -141,8 +261,13 @@ def main(argv=None):
     ap.add_argument('--version', dest='release_version')
     ap.add_argument('--release-json')
     ap.add_argument('--candidate')
+    ap.add_argument('--allow-missing-github-digest', action='store_true',
+                    help='explicitly accept size-only GitHub checks; local checksums still required')
     ap.add_argument('--expect-published', action='store_true', help='FAIL if the release is a draft')
     ap.add_argument('--expect-immutable', action='store_true', help='FAIL if the release is not immutable')
+    ap.add_argument('--notes', help='release notes file the body must equal (needs --release-json)')
+    ap.add_argument('--expected-author', default=WORKFLOW_AUTHOR,
+                    help='login that must have created the release (default %s)' % WORKFLOW_AUTHOR)
     if argv is None:
         argv = sys.argv[1:]
     if argv == ['--version']:
@@ -157,13 +282,29 @@ def main(argv=None):
         print('assets folder not found: %s' % assets)
         return 2
     out = []
+    data = None
+    if args.release_json:
+        data = load_release(args.release_json, out)
+        if data is not None:
+            count_downloads(assets, data, out)
+    if args.notes and not args.release_json:
+        print('--notes needs --release-json')
+        return 2
+    if (args.expect_published or args.expect_immutable or args.allow_missing_github_digest) and not args.release_json:
+        print('release state/digest options need --release-json')
+        return 2
     actual = check_sums(assets, out)
     check_zips(assets, actual, args.release_version, out)
     ran = ['checksums', 'zip integrity']
-    if args.release_json:
-        check_release_json(args.release_json, assets, args.release_version, out,
-                           args.expect_published, args.expect_immutable)
+    if data is not None:
+        check_release_json(data, assets, args.release_version, out,
+                           args.expect_published, args.expect_immutable, args.allow_missing_github_digest)
+        check_identity(data, args.release_version, args.expected_author, out)
         ran.append('GitHub metadata')
+        ran.append('author/title')
+        if args.notes:
+            check_body(data, args.notes, out)
+            ran.append('notes body')
     if args.candidate:
         check_candidate(args.candidate, assets, actual, out)
         ran.append('local candidate')

@@ -10,6 +10,9 @@ Expected state — verify before any work, stop on mismatch:
 - open release PRs: none (or: #<n> is mine to continue)
 - tag v<version>: must not exist
 - tracker/register file: <path> sha256 <first 12>
+- release marker: <path and line the project's rules define, e.g. AI_CONTEXT/PROJECT_QUICK_CONTEXT.md "Release in progress:"> must be empty or yours; write it before the first push (or: "project defines no marker")
+
+Commit identity in the fresh clone: <owner name> <<owner GitHub noreply address>>. AI attribution only as a Co-Authored-By trailer.
 
 Mode: Prepare + Gate only. Tag, draft, publish and settings are separate owner approvals (publish.md).
 Candidate goes to: <folder, labeled NOT RELEASED>.

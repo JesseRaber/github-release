@@ -25,14 +25,16 @@ Use in **Setup**. Draft everything locally first; creating the GitHub repository
 
 ## Defaults
 
+- Commit identity: in every clone, `git config user.name`/`user.email` = the owner's name and GitHub noreply address before the first commit. AI help is credited only in a `Co-Authored-By:` trailer, never as the author (release-gate.md section 2).
 - License: MIT unless the owner says otherwise.
 - `.gitattributes`: LF for `.md`, `.py`, `.json`, `.yml`; leave `.ps1` as the repository already has it.
-- Actions pinned by full commit SHA; external validators downloaded at pinned commits.
+- External validators downloaded at pinned commits.
 - Branch protection on `main`: PR required, CI required.
 - "Automatically delete head branches" ON (settings change, approval) — stale merged branches otherwise accumulate (9 observed on one repo before a manual tidy).
 - Social-preview image (Settings → General, 1280×640) and repository Website field set before wide sharing; both are owner settings actions.
 - Releases: enable **immutable releases** in repository settings (owner approval; it is a settings change).
-- CI on Ubuntu, and on Windows when helpers are meant to run on Windows.
+- CI on Ubuntu, and on Windows when helpers are meant to run on Windows; the template also runs on pushed `release/**` and `v*` branches and on `workflow_dispatch`, so a candidate branch has CI before its PR exists.
+- Actions pinned by full commit SHA with the release tag in a trailing comment (`# v7.0.1`); bump the pins when an action's runtime is deprecated, and resolve the SHA from the tag yourself (`git ls-remote https://github.com/actions/<name> refs/tags/<tag>`).
 - README opens with a "which ZIP do I download?" table generated from host-matrix.md.
 
 ## Approval order
