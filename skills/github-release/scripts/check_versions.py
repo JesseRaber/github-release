@@ -24,6 +24,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
 import sys
 
 __version__ = '0.3.0'
@@ -56,6 +57,7 @@ DRIFT_PAIRS = [
     ('packaging/build_packages.py', 'templates/build_packages.py'),
     ('.github/workflows/release.yml', 'templates/release.yml'),
     ('.github/workflows/ci.yml', 'templates/ci.yml'),
+    ('.gitattributes', 'templates/gitattributes'),
 ]
 
 
@@ -211,7 +213,7 @@ def _scan_previous(base, label, pat, history, hits):
 
 
 def check_previous(repo, cfg, previous, results, extra_roots=()):
-    pat = re.compile(r'(?<![\d.])v?' + re.escape(previous) + r'(?![\d])')
+    pat = re.compile(r'(?<![\w.])v?' + re.escape(previous) + r'(?!\w|\.\d)')
     hits = []
     _scan_previous(repo, '', pat, cfg['history'], hits)
     for er in extra_roots:
@@ -228,6 +230,68 @@ def check_previous(repo, cfg, previous, results, extra_roots=()):
         results.append(('PASS', 'no mentions of previous version %s outside history files' % previous))
 
 
+def previous_from_changelog(repo, version):
+    headings = re.findall(r'^## (\d+\.\d+\.\d+)(?:\s|$)', (repo / 'CHANGELOG.md').read_text(encoding='utf-8'), re.M)
+    if not headings or headings[0] != version or len(headings) != len(set(headings)):
+        raise ValueError('CHANGELOG must start with the requested version and have unique version headings')
+    return headings[1] if len(headings) > 1 else None
+
+
+
+def workflow_scripts(text):
+    """Read literal run blocks supported by these templates, without parsing YAML."""
+    scripts, active, indent = [], None, 0
+    for line in text.splitlines():
+        if active is not None:
+            if not line.strip() or len(line) - len(line.lstrip()) > indent:
+                active.append(line.strip())
+                continue
+            scripts.append('\n'.join(active))
+            active = None
+        match = re.match(r'^(\s*)(?:-\s*)?run:\s*(.*)$', line)
+        if match:
+            value = match.group(2).strip()
+            if value in ('|', '|-', '|+'):
+                active, indent = [], len(match.group(1))
+            elif value.startswith('>'):
+                raise ValueError('folded run blocks are outside the supported workflow lint syntax')
+            else:
+                scripts.append(value)
+    if active is not None:
+        scripts.append('\n'.join(active))
+    # Shell-only fixtures are supported for callers checking an individual script.
+    return scripts or [text]
+
+
+def shell_words(script):
+    """shlex preserves quoted #; shell comments start only at a word boundary."""
+    script = re.sub(r'\\\r?\n', ' ', script)
+    words = []
+    for line in script.splitlines():
+        # shlex's comment character applies inside unquoted words too, unlike Bash.
+        # Disable it and strip boundary comments with quote/escape awareness first.
+        quote, escaped, end = None, False, len(line)
+        for i, char in enumerate(line):
+            if escaped:
+                escaped = False
+                continue
+            if char == '\\' and quote != "'":
+                escaped = True
+                continue
+            if quote:
+                if char == quote:
+                    quote = None
+            elif char in "\"'":
+                quote = char
+            elif char == '#' and (i == 0 or line[i - 1].isspace() or line[i - 1] in ';|&('):
+                end = i
+                break
+        lexer = shlex.shlex(line[:end], posix=True, punctuation_chars=';&|()')
+        lexer.whitespace_split = True
+        lexer.commenters = ''
+        words.extend(list(lexer) + [';'])
+    return words
+
 
 def check_workflow(path, results):
     p = Path(path)
@@ -235,22 +299,42 @@ def check_workflow(path, results):
         results.append(('FAIL', 'workflow not found: %s' % path))
         return
     text = p.read_text(encoding='utf-8', errors='replace')
-    lines = [line.split('#', 1)[0] for line in text.splitlines()]
-    code = '\n'.join(lines)
-    # Join shell continuations so a multi-line `gh release create` is judged as one command.
-    joined = re.sub(r'\\\s*\n', ' ', code)
-    creates = [l for l in joined.splitlines() if 'gh release create' in l]
-    drafts_ok = bool(creates) and all(re.search(r'--draft(?![=\w-])', l) for l in creates)
-    no_undraft = not re.search(r'--draft[= ]false', code)
+    try:
+        words = [word for script in workflow_scripts(text) for word in shell_words(script)]
+    except ValueError as e:
+        results.append(('FAIL', 'workflow unsupported shell/run syntax: %s' % e))
+        return
+    creates, commands, api = [], [], False
+    for i, word in enumerate(words):
+        if word != 'gh' or i + 1 >= len(words):
+            continue
+        if words[i + 1] == 'api':
+            api = True
+        if words[i + 1] != 'release' or i + 2 >= len(words):
+            continue
+        command = words[i + 2]
+        commands.append(command)
+        args = []
+        for token in words[i + 3:]:
+            if token in (';', '&&', '||', '|', ')'):
+                break
+            args.append(token)
+        if command == 'create':
+            creates.append(args)
+    drafts_ok = bool(creates) and all(any(flag in args for flag in ('--draft', '--draft=true', '-d')) for args in creates)
+    no_undraft = not any(word in ('--draft=false', '-d=false') or (word in ('--draft', '-d') and words[i + 1:i + 2] == ['false'])
+                         for i, word in enumerate(words))
+    supported = not api and all(cmd in ('create', 'view', 'list') for cmd in commands)
     rules = [
         (drafts_ok, 'every `gh release create` uses --draft (%d found)' % len(creates)),
         (no_undraft, 'never publishes from the workflow (no --draft=false)'),
-        ('--clobber' not in code, 'never replaces existing assets (no --clobber)'),
-        ('--generate-notes' not in code, 'uses the reviewed notes file (no --generate-notes)'),
-        ('release view' in code, 'checks for an existing release (refusal itself not proven by lint; read the step)'),
+        (not any(w == '--clobber' or w.startswith('--clobber=') for w in words) and supported, 'never replaces existing assets (no --clobber; only create/view/list, no gh api)'),
+        (not any(w == '--generate-notes' or w.startswith('--generate-notes=') for w in words), 'uses the reviewed notes file (no --generate-notes)'),
+        ('view' in commands, 'checks for an existing release (refusal itself not proven by lint; read the step)'),
     ]
     for ok, label in rules:
         results.append(('PASS' if ok else 'FAIL', 'workflow ' + label))
+    results.append(('INFO', 'workflow lint checks literal gh commands in supported run syntax; it is not a sandbox or proof against dynamic shell code'))
 
 
 def main(argv=None):
@@ -259,6 +343,8 @@ def main(argv=None):
     ap.add_argument('--repo', default='.')
     ap.add_argument('--version', dest='new_version')
     ap.add_argument('--previous')
+    ap.add_argument('--previous-from-changelog', action='store_true',
+                    help='infer the preceding release from CHANGELOG; enabled in CI/release templates')
     ap.add_argument('--extra-root', action='append', default=[],
                     help='also scan this directory (e.g. a wiki clone) for previous-version mentions; repeatable')
     ap.add_argument('--config')
@@ -285,6 +371,15 @@ def main(argv=None):
     repo = Path(args.repo).resolve()
     cfg = load_config(repo, args.config)
     results = []
+    if args.previous_from_changelog:
+        try:
+            inferred = previous_from_changelog(repo, args.new_version)
+            if args.previous and args.previous != inferred:
+                raise ValueError('--previous disagrees with CHANGELOG')
+            args.previous = inferred
+            results.append(('INFO', 'previous version from CHANGELOG: %s' % (inferred or 'first release')))
+        except (OSError, UnicodeError, ValueError) as e:
+            results.append(('FAIL', 'previous-version inference: %s' % e))
     if not cfg['files']:
         results.append(('FAIL', 'no touch points configured (packaging/version_files.json)'))
     check_touch_points(repo, cfg, args.new_version, results)

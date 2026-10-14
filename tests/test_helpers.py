@@ -26,14 +26,16 @@ class BuilderTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.tmp = Path(tempfile.mkdtemp(prefix='gr-test-'))
+        cls.addClassCleanup(shutil.rmtree, cls.tmp)
         for n in ('a', 'b'):
             r = run(REPO / 'packaging/build_packages.py', cls.tmp / n)
-            assert r.returncode == 0, r.stderr
+            if r.returncode != 0:
+                raise RuntimeError(r.stdout + r.stderr)
         cls.version = json.loads(r.stdout)['version']
 
     @classmethod
     def tearDownClass(cls):
-        shutil.rmtree(cls.tmp)
+        pass  # addClassCleanup also covers a failing setUpClass
 
     def test_deterministic(self):
         a = (self.tmp / 'a' / 'SHA256SUMS.txt').read_text()
@@ -45,6 +47,7 @@ class BuilderTests(unittest.TestCase):
         self.assertEqual(sha(REPO / 'packaging/build_packages.py'), sha(SKILL / 'templates/build_packages.py'))
         self.assertEqual(sha(REPO / 'packaging/check_versions.py'), sha(SKILL / 'scripts/check_versions.py'))
         self.assertEqual(sha(REPO / 'packaging/verify_release.py'), sha(SKILL / 'scripts/verify_release.py'))
+        self.assertEqual(sha(REPO / '.gitattributes'), sha(SKILL / 'templates/gitattributes'))
         for wf in ('release.yml', 'ci.yml'):
             self.assertEqual(sha(REPO / '.github/workflows' / wf), sha(SKILL / 'templates' / wf))
 

@@ -2,14 +2,14 @@
 
 ## The builder
 
-Copy `templates/build_packages.py` to `packaging/build_packages.py` and `templates/packages.json` to `packaging/packages.json` in the skill repository. The builder:
+Copy `templates/build_packages.py` to `packaging/build_packages.py` and `templates/packages.json` to `packaging/packages.json` in the skill repository. The builder has its own version lifecycle (`build_packages --version`), independent of the skill and version-coupled helpers. Do not force the builder version to equal the skill version. The builder:
 
 - reads the skill from `skills/<name>/`, version from `SKILL.md` `metadata.version`, and refuses if plugin manifests disagree;
 - builds each archive in `packages.json` with a fixed timestamp, sorted members and fixed permissions, so the same source gives the same bytes;
 - re-reads every archive, byte-compares every member, asserts no omitted file slipped in, compiles every packaged Python script and runs `--version` on the scripts listed in `smoke_version_scripts`;
 - writes `SHA256SUMS.txt` and `BUILD_EVIDENCE.json`; never tags, uploads or installs.
 
-Fidelity check (2026-10-08, by the author, repeatable): with a `packages.json` describing multi-agent-folder-cleanup's seven packages (six like `templates/packages.json` plus a `subtree` add-on), this builder reproduced all seven published v1.6.1 ZIPs byte-for-byte against GitHub's asset digests.
+Historical fidelity check (2026-10-08, by the author, with the then-current builder; newer ZIP file-type metadata changes archive bytes): with a `packages.json` describing multi-agent-folder-cleanup's seven packages (six like `templates/packages.json` plus a `subtree` add-on), this builder reproduced all seven published v1.6.1 ZIPs byte-for-byte against GitHub's asset digests.
 
 Independent of `packages.json`, the builder also refuses `.ps1` in Copilot packages, `.ps1`/`.yml`/`.yaml` and files without an extension (e.g. `gitattributes`, `LICENSE`) in Gemini packages and non-Markdown in Opal packages, and fails if a script named in `smoke_version_scripts` is never packaged.
 
@@ -37,6 +37,15 @@ Independent of `packages.json`, the builder also refuses `.ps1` in Copilot packa
 | `extra_packages` (top level) | names of packages beyond the six known ones (e.g. a `subtree` add-on); unknown names fail the build so host invariants cannot be bypassed by renaming |
 
 Start from the six packages in `templates/packages.json` and remove hosts the skill does not target. Every omission needs a reason in host-matrix.md.
+
+## Input and validation boundaries
+
+- Every repository source and metadata read refuses linked ancestors, Windows reparse points and paths outside the repository. Archive targets refuse absolute paths, drive prefixes, backslashes and traversal segments.
+- ZIP regular files carry POSIX type and permission mode `0100644`. Helpers run through Python; this does not promise executable script permissions.
+- Exclusions and host invariants treat suffixes case-insensitively. Dotfiles without a suffix count as extensionless; host acceptance still requires a real upload check.
+- Frontmatter delimiters occupy their own lines. The standard-library builder requires an unquoted single-line name and `metadata.version` as a quoted semantic version. Opal name and description must occupy single lines; all multiline forms are refused rather than truncated. Keep only its supported name/description keys.
+- All packaged Python files, including templates, compile. Identical bytes are compiled once per invocation; version smoke checks run only for configured helpers and reuse identical helper bytes.
+- Distributable helper/template copies stay standalone. Keep repository copies byte-identical to them and run the drift check; do not introduce imports that require an installed skill.
 
 ## Rules
 

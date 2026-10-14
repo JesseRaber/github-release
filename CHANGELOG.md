@@ -4,6 +4,12 @@
 
 Minor: new gate checks, a notes and record lint, a new helper and changed helper output.
 
+Release hardening:
+- Strict checksum manifests, opt-in missing GitHub digest fallback, candidate evidence/manifest verification and explicit local-evidence handling.
+- Quoted-comment-safe literal workflow lint, automatic prior-version checking, build/draft job permission separation, locked validation inputs, retained build evidence and all CI matrix checksum comparisons.
+- Builder 1.0.2: path/link containment, regular-file ZIP metadata, anchored frontmatter, fail-closed Opal multiline handling, case-consistent exclusions and Python template compilation. Identical helper smoke checks are reused; no performance percentage is claimed.
+- Opal install-version evidence uses its supported body report; builder and skill versions have separate lifecycles. Standalone template drift checks include `.gitattributes`.
+
 Release process (lessons from the multi-agent-folder-cleanup release history, project rows R-051..R-065):
 
 - Notes lint in `check_versions.py`: the notes file FAILs on candidate/"not released" status wording, TBD/TODO, template placeholders, empty bullets and pre-written publish dates; WARNs on internal IDs (session UUIDs, tracker rows). HTML comments are ignored. The release workflow runs it before creating the draft. Notes template rewritten to match (R-051, R-060).

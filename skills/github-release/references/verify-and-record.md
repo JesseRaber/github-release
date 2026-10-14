@@ -6,19 +6,21 @@
 
 | Check | Fails when |
 |---|---|
-| Checksums | a file differs from `SHA256SUMS.txt`, or a listed file is missing, or an unlisted ZIP is present |
+| Checksums | the manifest is empty, malformed, repeats a filename, contains unsafe names or no ZIPs; a listed file is missing or differs; any unlisted file is present except validated local `BUILD_EVIDENCE.json` |
 | Naming | an archive name does not contain `-<version>-` |
 | Download count (`--release-json`) | printed first: `downloaded N of M listed assets`; N < M fails (a download problem, not a release defect) |
-| GitHub metadata (`--release-json`) | an asset's `digest` differs from the local file, or GitHub lists an asset not downloaded; reports `draft` / `immutable` |
+| GitHub metadata (`--release-json`) | an asset has no SHA-256 digest, its digest differs, or the asset list differs from downloads; reports `draft` / `immutable`. `--allow-missing-github-digest` explicitly permits WARN plus size comparison where digests are unavailable; local checksum verification still runs |
 | Author and title (`--release-json`) | the release was not created by `github-actions[bot]` (override with `--expected-author`), or its title does not end with ` v<version>` |
 | Notes body (`--notes FILE`) | the release body differs from the notes file, except for one appended `## Known issues (added YYYY-MM-DD)` section (publish.md section 5) |
 | Release state (`--expect-published`, `--expect-immutable`) | after publishing: the release is still a draft, or not immutable. Pass `--expect-immutable` whenever the repository setting is ON (publish approval block); the record says ON or OFF |
-| Candidate (`--candidate`) | a published archive is not byte-identical to the local candidate with the same name |
+| Candidate (`--candidate`) | the candidate directory or its build evidence is missing; its checksums or evidence are invalid; its manifest differs; or an archive is not byte-identical |
 | ZIP integrity | `testzip` fails or members are duplicated |
 
 Exit 0 only when every requested check ran and passed. Quote its output in the report; "verified" without that output, or an equivalent described check, must say "not verified".
 
-Spot-check content too: open one packaged `SKILL.md` per host package and confirm the version line.
+Keep release metadata JSON and notes outside the assets directory. Only local `BUILD_EVIDENCE.json` is exempt from the published checksum list, and its package hashes are checked. Release-state options require `--release-json`.
+
+Spot-check content too: open one packaged `SKILL.md` per host package and confirm the version line. Opal intentionally omits metadata: use the loaded version report in its body and the verified package record, and state that evidence source.
 
 ## Install procedure (replacing an existing host copy)
 

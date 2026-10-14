@@ -2,6 +2,13 @@
 
 Minor release. It turns lessons from a real skill's release history into gate checks and helper output, and fixes install backups that could shadow a new install.
 
+## Release verification and packaging
+
+- Checksum verification rejects empty, malformed and duplicate manifests and unexpected files. Missing GitHub digests require an explicit option; local archive hashes are still checked. The verifier also checks the saved build evidence and checksum manifest when comparing the local build.
+- Workflow lint preserves quoted comment characters and refuses unsupported release mutation commands. CI compares checksums across all three configured OS/Python combinations.
+- Build validation uses read permissions, locked dependency hashes and a SHA-256-checked upstream validator. A separate tag-only job creates the draft and preserves build evidence in the downloadable workflow artifact.
+- Packaging refuses linked or escaping source and archive paths, writes regular-file ZIP metadata, checks Python templates and rejects unsupported multiline Opal descriptions without losing text. Case-insensitive exclusions agree with host checks.
+
 ## Changes
 
 **Installs**

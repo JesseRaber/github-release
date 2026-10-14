@@ -34,6 +34,8 @@ Decide by rule, not by asking each time. Name the level and the item that trigge
 
 The highest level among the release's changes wins. Owner override is allowed and recorded.
 
+`--previous-from-changelog` is enabled in the CI/release templates: it uses the preceding unique version heading and refuses a changelog whose first heading is not the requested version. An explicit `--previous` must agree when both are used. Configure legitimate historical references in the existing history list.
+
 `--previous` lists every remaining mention of the old version outside history files (CHANGELOG, older release notes). Each one is either a stale reference to fix or history to leave; decide per line. (Observed failure: a Copilot install guide still said the previous version after a release.)
 
 ## 2. Build the local candidate
@@ -95,6 +97,14 @@ Run in order. Stop at the first fail.
 | G12 | Visual check before a public push: README renders (tables, any diagram), links and image alt text are current, and the social-preview image is not contradicted by this release's content. Update assets only when content changed | open the rendered README on the branch; repository settings → social preview (owner) |
 | G13 | One-host trial of the **exact candidate**: install one candidate archive on one host per verify-and-record.md (backup outside scanned folders, duplicate check), run the check prompt, save the reply as an evidence file. `not-run` is allowed with a reason | evidence file path; candidate archive sha256. Observed: a one-host trial found 6 defects before the tag; releases without one were superseded within hours 5 times |
 | G14 | Repository copies match the skill's current templates: `packaging/check_versions.py`, `verify_release.py`, `build_packages.py`, `.github/workflows/*.yml`, `HOST_INSTALL_LOG.md` header. List stale copies; update them or record why not | `check_versions.py --drift-against <path to installed github-release skill>` |
+
+## Workflow hardening and lint limits
+
+The release template validates/builds with `contents: read`; a dependent tag-only job gets `contents: write` to create the draft. Manual dispatch builds artifacts only. Build artifacts retain `BUILD_EVIDENCE.json`, while published assets remain ZIPs plus `SHA256SUMS.txt`. The draft job downloads the immutable artifact ID from this run and verifies it before uploading.
+
+Validation uses a version/hash-locked PyYAML wheel for CPython 3.11 on Linux x86_64 and a commit plus SHA-256-locked upstream validator. If the runner architecture or validator changes, review and update those pins. Job separation reduces token exposure; it cannot make a compromised build artifact trustworthy by itself.
+
+Workflow lint handles literal run blocks and literal `gh release create/view/list` commands. Creation must use `--draft`, `--draft=true` or `-d`; quoted `#` characters are preserved. Edit/delete/upload commands and `gh api` are refused. Folded run blocks are outside its supported syntax. This lint is not a shell sandbox: aliases, computed commands, sourced scripts and arbitrary shell code require review. It checks literal draft flags, not event permissions or all possible publication routes.
 
 ## 4. Windows lessons (observed)
 

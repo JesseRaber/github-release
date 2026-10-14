@@ -7,7 +7,7 @@ Read-only install check for the <skill> skill, v<version>. Run these tests and r
 
 T1 Arrival line: invoke the skill; quote its loaded report line exactly, including the SKILL.md path it names.
 T2 Path check: does that path match the expected install location <expected path>? It FAILS if the path is inside a backup, staging or old-version folder. Name any OTHER copies of this skill you can see (backups inside the skills folder, plugin caches, second channels, older dirs); if the host has "reveal in folder", say where it points.
-T3 Version: quote the `metadata.version` line from the loaded SKILL.md file itself (not from a catalog or cache). If this host does not show you SKILL.md frontmatter, write "frontmatter not visible" and use the version in the T1 loaded line instead — that is not a FAIL.
+T3 Version: quote the `metadata.version` line from the loaded SKILL.md file itself (not from a catalog or cache). For Opal, metadata is intentionally omitted: quote the version in the loaded report/body and identify that source. For other hosts, if this host does not show you SKILL.md frontmatter, write "frontmatter not visible" and use the version in the T1 loaded line instead — that is not a FAIL.
 T4 Helpers: run each packaged helper with `--version` and paste the command and its literal output. A version you did not see printed by a command you ran is NOT RUN, never PASS. Hosts without a shell report NOT RUN.
 T5 File count: count files in the installed skill folder; expected <n> for this package.
 T6 Behavior smoke: answer from the skill only — <one question with a known answer, e.g. "which release ZIP does this host use?">.

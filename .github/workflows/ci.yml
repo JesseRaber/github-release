@@ -37,10 +37,9 @@ jobs:
       - name: Gate checks (versions agree, notes lint, record encoding, workflow is draft-first)
         shell: bash
         run: |
-          SKILL=$(python -c "import json;print(json.load(open('packaging/packages.json'))['skill'])")
-          VERSION=$(python -c "import re;print(re.search(r'^  version: \"([^\"]+)\"', open('skills/$SKILL/SKILL.md', encoding='utf-8').read(), re.M)[1])")
+          VERSION=$(python packaging/build_packages.py --describe | python -c 'import json,sys; print(json.load(sys.stdin)["version"])')
           python packaging/check_versions.py --repo . --config packaging/version_files.json \
-            --version "$VERSION" --workflow .github/workflows/release.yml
+            --version "$VERSION" --previous-from-changelog --workflow .github/workflows/release.yml
       - name: Candidate build (byte-verified, not published)
         shell: bash
         run: python packaging/build_packages.py "$RUNNER_TEMP/candidate" --status "CI candidate, not published"
@@ -60,19 +59,26 @@ jobs:
           python-version: '3.11'
       - name: Frontmatter and OpenAI skill validator (pinned)
         run: |
-          python -m pip install --disable-pip-version-check PyYAML
-          SKILL=$(python -c "import json;print(json.load(open('packaging/packages.json'))['skill'])")
+          printf '%s\n' 'PyYAML==6.0.2 --hash=sha256:3ad2a3decf9aaba3d29c8f537ac4b243e36bef957511b4766cb0057d32b0be85' > "$RUNNER_TEMP/validation-requirements.txt"
+          python -m pip install --disable-pip-version-check --only-binary=:all: --require-hashes -r "$RUNNER_TEMP/validation-requirements.txt"
+          SKILL=$(python packaging/build_packages.py --describe | python -c 'import json,sys; print(json.load(sys.stdin)["skill"])')
           python - "$SKILL" <<'PY'
           import sys, yaml
+          sys.path.insert(0, 'packaging')
+          from build_packages import frontmatter
           name = sys.argv[1]
-          fm = yaml.safe_load(open(f'skills/{name}/SKILL.md', encoding='utf-8').read().split('---')[1])
-          assert fm.get('name') == name, fm.get('name')
-          assert fm.get('description') and len(fm['description']) <= 1024
+          fm = yaml.safe_load(frontmatter(open(f'skills/{name}/SKILL.md', 'rb').read())[0])
+          if not isinstance(fm, dict) or fm.get('name') != name:
+              sys.exit('frontmatter name does not match configured skill')
+          desc = fm.get('description')
+          if not isinstance(desc, str) or not desc.strip() or len(desc) > 1024:
+              sys.exit('description missing or over 1024 chars')
           print('Frontmatter OK')
           PY
           curl --fail --silent --show-error --location \
             https://raw.githubusercontent.com/openai/skills/49f948faa9258a0c61caceaf225e179651397431/skills/.system/skill-creator/scripts/quick_validate.py \
             --output /tmp/openai-quick-validate.py
+          echo "6cc9dc3199c935916cf6f73fcbbbb0e3bb1b58c8f5109fefa499978908164f51  /tmp/openai-quick-validate.py" | sha256sum --check
           python /tmp/openai-quick-validate.py "skills/$SKILL"
 
   same-bytes:
@@ -86,4 +92,5 @@ jobs:
         run: |
           ls sums
           diff sums/sums-ubuntu-latest-3.11/SHA256SUMS.txt sums/sums-windows-latest-3.11/SHA256SUMS.txt
-          echo "Identical archives on Ubuntu and Windows"
+          diff sums/sums-ubuntu-latest-3.11/SHA256SUMS.txt sums/sums-ubuntu-22.04-3.8/SHA256SUMS.txt
+          echo "Identical archives across all three OS/Python combinations"
