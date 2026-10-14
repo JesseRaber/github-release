@@ -22,7 +22,7 @@ import re
 import sys
 import zipfile
 
-__version__ = '0.3.0'
+__version__ = '0.4.0'
 SUMS = 'SHA256SUMS.txt'
 WORKFLOW_AUTHOR = 'github-actions[bot]'
 LOCAL_EVIDENCE = 'BUILD_EVIDENCE.json'

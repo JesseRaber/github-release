@@ -20,6 +20,8 @@ Not included: publishing the draft, repository settings, host installs
 
 An approval covers only what the block lists. When immutable releases are **OFF**, ask the owner once, before the first publish of the repository (or of this session), whether to turn the setting on (owner's browser, about a minute) — then record the answer in the approval block. Do not ask again in the same release. Observed: immutable releases stayed off for three skill-run releases because nothing forced the decision.
 
+Read immutable-release status from the repository setting at approval time. A draft can report `immutable: false` while that setting is ON; draft metadata alone does not establish the setting. Record the setting source and observation time, then check published state after publication.
+
 ## 2. Where release actions run
 
 Cloud agent sessions are refused these steps by two different sources: the network proxy or GitHub API (`remote end hung up`, HTTP 403 "editing releases not permitted"), and the session's own **safety classifier** (denials such as "merge without review" or "create public surface"). Both were observed repeatedly (2026-10-08 pilot, 2026-10-09 v1.7.0 and v1.7.1). Treat the refusals below as **expected: do not attempt them from a cloud session**; plan them as owner steps from the start:

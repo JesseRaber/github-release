@@ -1,17 +1,19 @@
 ---
 name: github-release
-description: Create GitHub repositories for Agent Skills and release them right the first time - version agreement, a pre-tag gate, deterministic host-specific packages (Claude app, Claude Code, Codex/ChatGPT, Microsoft Copilot, Grok, Gemini Apps, Opal, Antigravity, local models), draft-first publishing, verification of published assets against the local build, and a dated per-host install log. Use whenever an agent prepares, tags, publishes, re-packages or verifies a skill release, sets up a skill repository or release workflow, decides which ZIP a host needs, or records that a skill was uploaded or installed somewhere.
+description: v0.4.0 GitHub Release by Jesse Raber. Create GitHub repositories for Agent Skills and release them with version agreement, a pre-tag gate, host-specific packages (Claude app, Claude Code, Codex/ChatGPT, Microsoft Copilot, Grok, Gemini Apps, Opal, Antigravity, local models), draft-first publishing, published-asset verification, and a dated host install log. Use when preparing, tagging, publishing, re-packaging or verifying a skill release, setting up a skill repository or release workflow, choosing a host ZIP, or recording a skill upload or installation.
 license: MIT
 metadata:
-  version: "0.3.0"
+  version: "0.4.0"
   repository: https://github.com/JesseRaber/github-release
 ---
 
 # GitHub Release
 
+**Version:** 0.4.0 · **Repository:** https://github.com/JesseRaber/github-release · **Author:** Jesse Raber
+
 A release is right the first time when the bytes you tested are the bytes people download, every host gets a package it accepts, and the record says which host has which version and how anyone knows.
 
-Report as: **Loaded GitHub Release v0.3.0 (SKILL.md at <path you loaded>)**. State the mode in the first line. The path lets install checks detect shadow copies and stale channels.
+Report as: **Loaded GitHub Release v0.4.0 (SKILL.md at <path you loaded>)**. State the mode in the first line. The path lets install checks detect shadow copies and stale channels.
 
 ## Choose the mode
 

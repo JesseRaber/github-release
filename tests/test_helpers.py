@@ -83,6 +83,22 @@ class BuilderTests(unittest.TestCase):
         front = z.read('github-release/SKILL.md').decode().split('---')[1]
         self.assertEqual([l.split(':')[0] for l in front.strip().splitlines()], ['name', 'description'])
 
+    def test_identity_in_every_package(self):
+        repo_url = 'https://github.com/JesseRaber/github-release'
+        for archive in (self.tmp / 'a').glob('*.zip'):
+            with self.subTest(archive=archive.name), zipfile.ZipFile(archive) as z:
+                skill_path = next(n for n in z.namelist() if n.endswith('/SKILL.md'))
+                body = z.read(skill_path).decode('utf-8')
+                self.assertIn('description: v%s GitHub Release by Jesse Raber' % self.version, body)
+                self.assertIn('**Version:** %s' % self.version, body)
+                self.assertIn('**Repository:** ' + repo_url, body)
+                self.assertIn('**Author:** Jesse Raber', body)
+        for manifest_path in ('.claude-plugin/plugin.json', '.codex-plugin/plugin.json'):
+            manifest = json.loads((REPO / manifest_path).read_text(encoding='utf-8'))
+            self.assertEqual(manifest['version'], self.version)
+            self.assertEqual(manifest['repository'], repo_url)
+            self.assertEqual(manifest['author']['name'], 'Jesse Raber')
+
     def test_verify_release_pass_and_tamper(self):
         assets = self.tmp / 'a'
         r = run(SKILL / 'scripts/verify_release.py', '--assets', assets, '--version', self.version,

@@ -27,7 +27,7 @@ import re
 import shlex
 import sys
 
-__version__ = '0.3.0'
+__version__ = '0.4.0'
 SEMVER = re.compile(r'^\d+\.\d+\.\d+$')
 TEXT_SUFFIXES = {'.md', '.py', '.json', '.yml', '.yaml', '.txt', '.ps1', '.toml', '.cfg'}
 SKIP_DIRS = {'.git', '__pycache__', 'node_modules', 'dist'}
