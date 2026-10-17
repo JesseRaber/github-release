@@ -1,0 +1,44 @@
+{
+  "recorded_at": "2026-10-17T19:29:37.463387-04:00",
+  "checks": [
+    {
+      "host": "Codex CLI",
+      "version": "1.1.0",
+      "resolved_skill": "C:/Users/JesseRaber/.codex/skills/github-release/SKILL.md",
+      "channel": "standalone skills directory",
+      "fresh_process_exit": 0,
+      "reply_sha256": "9d48bea677d6c0d988eace37de610a720439d574b2701441b11b51b91ea80b15",
+      "evidence": "packaging/evidence/2026-10-17_v110-codex-load.md",
+      "actual_load": "PASS",
+      "routing_smoke": "PASS: README edit -> Edit/ordinary-edits; published release -> Verify/verify-and-record",
+      "helpers": "all3 --version 1.1.0 exit0",
+      "target_duplicates": "PASS",
+      "interactive_picker": "NOT RUN"
+    },
+    {
+      "host": "Claude Code",
+      "version": "1.1.0",
+      "resolved_skill": "C:/Users/JesseRaber/.claude/local-marketplaces/github-release/skills/github-release/SKILL.md",
+      "channel": "directory marketplace jesseraber-github-release",
+      "fresh_process_exit": 0,
+      "reply_sha256": "c6f535a2b6ce78b7f8ce8ca6558efa1709ac50b1a002e9e0b2f47b640e10b351",
+      "evidence": "packaging/evidence/2026-10-17_v110-claude-load.md",
+      "actual_load": "PASS",
+      "routing_smoke": "PASS: README edit -> Edit/ordinary-edits; published release -> Verify/verify-and-record",
+      "helpers": "all3 --version 1.1.0 exit0",
+      "target_duplicates": "PASS",
+      "interactive_picker": "NOT RUN"
+    }
+  ],
+  "limits": [
+    "Fresh CLI instances verified; existing running GUI session not restarted",
+    "No interactive desktop picker display inspected",
+    "Unrelated MCP authentication startup warnings do not affect local skill load"
+  ],
+  "claude_loader_init": {
+    "version": "1.1.0",
+    "plugin_source": "github-release@jesseraber-github-release",
+    "plugin_path": "~/.claude/local-marketplaces/github-release",
+    "invocation": "github-release:github-release"
+  }
+}
