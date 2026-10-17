@@ -1,6 +1,6 @@
 ---
 name: github-release
-description: v0.4.0 GitHub Release by Jesse Raber. Create GitHub repositories for Agent Skills and release them with version agreement, a pre-tag gate, host-specific packages (Claude app, Claude Code, Codex/ChatGPT, Microsoft Copilot, Grok, Gemini Apps, Opal, Antigravity, local models), draft-first publishing, published-asset verification, and a dated host install log. Use when preparing, tagging, publishing, re-packaging or verifying a skill release, setting up a skill repository or release workflow, choosing a host ZIP, or recording a skill upload or installation.
+description: v0.4.0 GitHub Release by Jesse Raber. Make ordinary GitHub repository edits through a focused diff, relevant checks and PR workflow; set up and release Agent Skills with version agreement, a pre-tag gate, host-specific packages, draft-first publishing, asset verification and host install records. Use for repository edits or PR preparation, skill repository setup, preparing or verifying a skill release, choosing a host ZIP, or recording an installation.
 license: MIT
 metadata:
   version: "0.4.0"
@@ -20,6 +20,7 @@ Report as: **Loaded GitHub Release v0.4.0 (SKILL.md at <path you loaded>)**. Sta
 | Mode | Typical request | Allowed without further approval | Read |
 |---|---|---|---|
 | **Setup** | "Make a repo for this skill" | Draft the repository layout and files locally | [repo-setup.md](references/repo-setup.md) |
+| **Edit** | "Fix this README / helper / PR; don't release it" | Inspect, edit and check locally; prepare a diff and PR text | [ordinary-edits.md](references/ordinary-edits.md) |
 | **Prepare** | "Get v1.2.0 ready" | Bump versions, write notes, build a local candidate, run checks | [release-gate.md](references/release-gate.md), [packaging.md](references/packaging.md) |
 | **Gate** | "Is it ready to tag?" | Read-only checklist against the exact candidate | [release-gate.md](references/release-gate.md) |
 | **Publish** | "Release it" | Nothing until the owner approves the exact approval block | [publish.md](references/publish.md) |
@@ -27,6 +28,8 @@ Report as: **Loaded GitHub Release v0.4.0 (SKILL.md at <path you loaded>)**. Sta
 | **Record** | "I uploaded it to Gemini" | Append a host install-log row with its evidence | [verify-and-record.md](references/verify-and-record.md), [host-matrix.md](references/host-matrix.md) |
 
 For "which ZIP do I give host X?" read [host-matrix.md](references/host-matrix.md) only.
+
+For an ordinary repository edit, read **Edit** only; do not load the release gate or build host packages by default. Changes to a helper, workflow or skill instruction still qualify when they are not part of preparing a release candidate. Check the actual branch/PR and project release records: editing an existing release candidate uses **Prepare/Gate** for affected checks, even when the request says only "fix this PR". Run relevant and repository-required checks. Versioned release preparation, distributable packaging, tagging, publication and host installation use their existing modes; a mixed request keeps those actions separate.
 
 ## Hard rules
 

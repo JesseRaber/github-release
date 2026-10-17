@@ -17,6 +17,10 @@ An Agent Skill that teaches AI agents to set up skill repositories and release t
 
 ## The flow it enforces
 
+For ordinary repository edits, use **Edit**: confirm the base and scope, make the change, inspect the diff and run relevant checks, then stop at local review or the authorized push/PR/merge boundary. It skips the skill-release gate unless release preparation is requested; repository-required checks still apply. See [the ordinary-edit workflow](skills/github-release/references/ordinary-edits.md).
+
+For a skill release:
+
 ```mermaid
 flowchart LR
     P[Prepare\ncandidate + checks] --> G[Gate\nG0-G14, read-only]
