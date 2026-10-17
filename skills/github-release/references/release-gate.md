@@ -1,5 +1,7 @@
 # Prepare and gate a release
 
+Before this step, verify the recorded [distribution scope and licensing](distribution-policy.md): owner-approved audience, permitted use, consistent source/package notices and metadata, destination/visibility and retained prior/third-party rights. A private no-sharing decision blocks unauthorized distribution. Public visibility alone is not a license selection. Report mismatches before proceeding; this check grants no publication or access-change permission.
+
 Use in **Prepare** (make the candidate) and **Gate** (judge it, read-only). The gate result is a list of checks with pass, fail or not-run, not a summary.
 
 ## 1. Version touch points

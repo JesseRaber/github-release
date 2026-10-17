@@ -1,5 +1,7 @@
 # Ordinary GitHub edits
 
+When editing ownership, license, sharing or promotion text, also read [distribution-policy.md](distribution-policy.md). Carry the current owner-approved scope into the local diff; an ordinary edit does not authorize public sharing or change access.
+
 Use **Edit** for a repository change or PR without a release: documentation, code, tests, skill instructions or workflow maintenance. Prepare a reviewable change and verify it through the last authorized boundary. Do not run G0-G14, bump versions or build host packages solely because the repository contains a skill.
 
 ## 1. Establish the change

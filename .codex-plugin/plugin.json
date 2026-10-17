@@ -1,7 +1,7 @@
 {
   "name": "github-release",
-  "version": "1.0.0",
-  "description": "v1.0.0 GitHub Release by Jesse Raber: make repository edits with focused checks and PR preparation; create Agent Skill repositories, gate versions, build host packages, verify assets, and record installs.",
+  "version": "1.1.0",
+  "description": "v1.1.0 GitHub Release by Jesse Raber: make repository edits with focused checks and PR preparation; create Agent Skill repositories, gate versions, build host packages, verify assets, and record installs.",
   "skills": "./skills/",
   "author": {
     "name": "Jesse Raber",
@@ -19,8 +19,8 @@
   ],
   "interface": {
     "displayName": "GitHub Release",
-    "shortDescription": "v1.0.0 GitHub edits and skill releases",
-    "longDescription": "GitHub Release v1.0.0 by Jesse Raber (https://github.com/JesseRaber/github-release). Make repository edits with focused checks and PR preparation. For skill releases, gate versions before tagging, build host packages, verify draft and published assets, and record installs with dated evidence.",
+    "shortDescription": "v1.1.0 GitHub edits and skill releases",
+    "longDescription": "GitHub Release v1.1.0 by Jesse Raber (https://github.com/JesseRaber/github-release). Make repository edits with focused checks and PR preparation. For skill releases, gate versions before tagging, build host packages, verify draft and published assets, and record installs with dated evidence.",
     "developerName": "Jesse Raber",
     "category": "Productivity",
     "capabilities": [

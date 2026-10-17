@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.1.0
+
+Minor: new distribution-scope prerequisite that can stop a previously permitted release.
+
+- Adds an owner-approved audience and rights check before repository setup, release preparation, and edits to licensing or sharing.
+- Keeps private work within its approved internal users, organizations and AI accounts/tools, with no public promotion or storefront material.
+- Makes public discovery descriptions, documentation, attribution and approved links conditional on intentional public distribution.
+- Removes the universal MIT default. Public repository visibility does not select a license; prior grants and third-party notices remain in force.
+- Checks source, package notices, destinations and visibility for consistency without claiming copy protection or changing access permissions.
+
 ## 1.0.0
 
 Major: new Edit operating mode under the existing skill version policy.

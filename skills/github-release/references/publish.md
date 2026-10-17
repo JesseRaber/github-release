@@ -1,5 +1,7 @@
 # Tag and publish (draft first)
 
+Before this step, verify the recorded [distribution scope and licensing](distribution-policy.md): owner-approved audience, permitted use, consistent source/package notices and metadata, destination/visibility and retained prior/third-party rights. A private no-sharing decision blocks unauthorized distribution. Public visibility alone is not a license selection. Report mismatches before proceeding; this check grants no publication or access-change permission.
+
 Use in **Publish**. Every step that changes GitHub needs the owner's explicit approval for that step. The release workflow template (`templates/release.yml`) builds on a pushed tag, creates a **draft** release, and refuses if a release for the tag already exists.
 
 ## 1. Approval block

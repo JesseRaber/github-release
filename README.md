@@ -4,6 +4,8 @@ By **[Jesse Raber](https://jesseraber.net)** — owner of Unique WoodWorx and bu
 
 An Agent Skill that teaches AI agents to set up skill repositories and release them right the first time: a version gate before any tag, deterministic packages for each AI host, draft-first publishing, verification that published bytes equal the tested build, and a dated per-host install log.
 
+Before setup or release, record the owner-approved audience and reuse rights. Private projects keep their approved internal users and AI tools without public promotion; public visibility alone does not choose a license. See [distribution scope and licensing](skills/github-release/references/distribution-policy.md). This skill retains its existing MIT license.
+
 ## Which ZIP do I download?
 
 | Your AI app | Download |
