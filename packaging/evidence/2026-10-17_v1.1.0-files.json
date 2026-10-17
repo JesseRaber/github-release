@@ -1,0 +1,36 @@
+{
+  "recorded_at": "2026-10-17T19:02:17.570774-04:00",
+  "source_release": "https://github.com/JesseRaber/github-release/releases/tag/v1.1.0",
+  "observed_by": "Codex",
+  "authorization": "Owner approved remaining project tasks and host updates",
+  "checks": [
+    {
+      "host": "Codex",
+      "version": "1.1.0",
+      "archive": "github-release-1.1.0-UNIVERSAL-skill.zip",
+      "sha256": "7dde54b24c101a29fad7f9a9fb574bcef8e61870ea3a796c1497b1ae2ed33674",
+      "files": 27,
+      "missing": 0,
+      "extra": 0,
+      "different": 0,
+      "backup": "outside scanned roots; SHA256 manifest verified",
+      "duplicate_check": "PASS; exactly one github-release entrypoint in inspected host roots",
+      "host_load": "NOT RUN; restart and in-host verification required"
+    },
+    {
+      "host": "Claude Code",
+      "version": "1.1.0",
+      "archive": "github-release-1.1.0-claude-code-plugin.zip",
+      "sha256": "c768684c24c92621102e8c1edf64c719832fd03d5203885c7a6accbfd504cc2f",
+      "files": 31,
+      "missing": 0,
+      "extra": 0,
+      "different": 0,
+      "backup": "outside scanned roots; SHA256 manifest verified",
+      "duplicate_check": "PASS; exactly one github-release entrypoint in inspected host roots",
+      "host_load": "NOT RUN; restart and in-host verification required"
+    }
+  ],
+  "claude_cache": "CLI update created a duplicate; backed up outside scanned roots and renamed cache SKILL.md non-loading, retaining directory marketplace source",
+  "limits": "File checks do not establish loader selection, UI display, behavioral smoke tests, or other hosts. No host reply was fabricated."
+}
