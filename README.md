@@ -43,6 +43,6 @@ flowchart LR
 
 ## About the author
 
-I'm Jesse Raber, owner of [Unique WoodWorx](https://uniquewoodworx.com), a custom cabinet shop in Odon, Indiana. I built this skill because my own AI-driven releases kept going wrong in ways the agents couldn't see. If you want help putting AI agents to work in your business — CNC, cabinet software, or workflows like this one — that's what I do at [jesseraber.net](https://jesseraber.net). Build and release walkthroughs: [YouTube](https://www.youtube.com/@Jesse_Raber).
+I'm Jesse Raber, owner of [Unique WoodWorx](https://jesseraber.net), a custom cabinet shop in Odon, Indiana. I built this skill because my own AI-driven releases kept going wrong in ways the agents couldn't see. If you want help putting AI agents to work in your business — CNC, cabinet software, or workflows like this one — that's what I do at [jesseraber.net](https://jesseraber.net). Build and release walkthroughs: [YouTube](https://www.youtube.com/@Jesse_Raber).
 
 MIT licensed.
