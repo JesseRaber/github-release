@@ -1,6 +1,8 @@
 """Regression tests for the github-release builder and helpers. Standard library only."""
 import hashlib
 import json
+import posixpath
+import re
 from pathlib import Path
 import shutil
 import subprocess
@@ -67,6 +69,29 @@ class BuilderTests(unittest.TestCase):
         z = zipfile.ZipFile(self.tmp / 'a' / ('github-release-%s-gemini-apps-only.zip' % self.version))
         self.assertFalse([n for n in z.namelist() if n.endswith(('.yml', '.yaml', '.ps1'))])
         self.assertIn('github-release/scripts/verify_release.py', z.namelist())
+
+    def test_reachable_references_resolve_in_every_package(self):
+        # Follow mode links and cross-mode links through every adapter, including Opal.
+        for archive in sorted((self.tmp / 'a').glob('*.zip')):
+            with self.subTest(package=archive.name), zipfile.ZipFile(archive) as z:
+                entry = next(n for n in z.namelist() if n.endswith('/SKILL.md'))
+                pending, seen = [entry], set()
+                while pending:
+                    source = pending.pop()
+                    if source in seen:
+                        continue
+                    seen.add(source)
+                    links = re.findall(r'\]\(([^)#]+\.md)(?:#[^)]*)?\)',
+                                       z.read(source).decode('utf-8'))
+                    if source == entry:
+                        self.assertTrue(links, 'No mode references found')
+                    for link in links:
+                        if '://' in link:
+                            continue
+                        target = posixpath.normpath(posixpath.join(posixpath.dirname(source), link))
+                        self.assertIn(target, z.namelist())
+                        self.assertTrue(z.read(target).strip(), target)
+                        pending.append(target)
 
     def test_gemini_omits_extensionless(self):
         z = zipfile.ZipFile(self.tmp / 'a' / ('github-release-%s-gemini-apps-only.zip' % self.version))
