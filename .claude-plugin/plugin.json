@@ -1,7 +1,7 @@
 {
   "name": "github-release",
-  "version": "0.4.0",
-  "description": "v0.4.0 GitHub Release by Jesse Raber: make repository edits with focused checks and PR preparation; create Agent Skill repositories, gate versions, build host packages, verify assets, and record installs.",
+  "version": "1.0.0",
+  "description": "v1.0.0 GitHub Release by Jesse Raber: make repository edits with focused checks and PR preparation; create Agent Skill repositories, gate versions, build host packages, verify assets, and record installs.",
   "author": {
     "name": "Jesse Raber",
     "url": "https://jesseraber.net"

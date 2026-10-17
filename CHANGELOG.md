@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.0.0
+
+Major: new Edit operating mode under the existing skill version policy.
+
+- Adds Edit mode for ordinary GitHub repository changes, with focused diff review, relevant checks and PR preparation instead of the full skill-release gate.
+- Keeps existing release-candidate edits on the Prepare/Gate path so changes cannot inherit stale release evidence.
+- Checks automation effects before push, PR changes, merge or queue entry, and preserves separate approval boundaries.
+- Verifies CI against the current PR head and base, including merge-test and queue commits, with required checks enforced before merge.
+- Updates skill discovery descriptions and checks that linked mode references resolve in all six host packages.
+
 ## 0.4.0
 
 Minor: release-gate result meaning and evidence-reuse guidance changed; skill identity is visible in source and host packages.

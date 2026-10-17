@@ -18,7 +18,7 @@ Host-specific packages leave some files out: Gemini Apps omits the `.yml` workfl
 Many apps (Codex observed) load **every** `SKILL.md` anywhere under their skills folder. Never keep the old copy inside that folder: move it beside it (for example `~/.codex/skill-backups/`), or rename its `SKILL.md` to `SKILL.backup-not-loaded.md`. Then check that only one copy carries the name and restart the app:
 
 ```bash
-python github-release/scripts/check_skill_duplicates.py ~/.codex/skills --name github-release --expect-version 0.4.0
+python github-release/scripts/check_skill_duplicates.py ~/.codex/skills --name github-release --expect-version 1.0.0
 ```
 
 ## Claude app
@@ -33,7 +33,7 @@ Point the system prompt or context loader at `github-release/SKILL.md`.
 
 > Is my skill repository ready to tag v1.0.0?
 
-A loaded skill states **Mode: Gate** first and reports **Loaded GitHub Release v0.4.0 (SKILL.md at <path>)**.
+A loaded skill states **Mode: Gate** first and reports **Loaded GitHub Release v1.0.0 (SKILL.md at <path>)**.
 
 ## Requirements
 

@@ -1,19 +1,19 @@
 ---
 name: github-release
-description: v0.4.0 GitHub Release by Jesse Raber. Make ordinary GitHub repository edits through a focused diff, relevant checks and PR workflow; set up and release Agent Skills with version agreement, a pre-tag gate, host-specific packages, draft-first publishing, asset verification and host install records. Use for repository edits or PR preparation, skill repository setup, preparing or verifying a skill release, choosing a host ZIP, or recording an installation.
+description: v1.0.0 GitHub Release by Jesse Raber. Make ordinary GitHub repository edits through a focused diff, relevant checks and PR workflow; set up and release Agent Skills with version agreement, a pre-tag gate, host-specific packages, draft-first publishing, asset verification and host install records. Use for repository edits or PR preparation, skill repository setup, preparing or verifying a skill release, choosing a host ZIP, or recording an installation.
 license: MIT
 metadata:
-  version: "0.4.0"
+  version: "1.0.0"
   repository: https://github.com/JesseRaber/github-release
 ---
 
 # GitHub Release
 
-**Version:** 0.4.0 · **Repository:** https://github.com/JesseRaber/github-release · **Author:** Jesse Raber
+**Version:** 1.0.0 · **Repository:** https://github.com/JesseRaber/github-release · **Author:** Jesse Raber
 
 A release is right the first time when the bytes you tested are the bytes people download, every host gets a package it accepts, and the record says which host has which version and how anyone knows.
 
-Report as: **Loaded GitHub Release v0.4.0 (SKILL.md at <path you loaded>)**. State the mode in the first line. The path lets install checks detect shadow copies and stale channels.
+Report as: **Loaded GitHub Release v1.0.0 (SKILL.md at <path you loaded>)**. State the mode in the first line. The path lets install checks detect shadow copies and stale channels.
 
 ## Choose the mode
 
