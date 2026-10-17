@@ -76,6 +76,8 @@
   "history": [
     "CHANGELOG.md",
     "packaging/RELEASE_NOTES_v*.md",
-    "HOST_INSTALL_LOG.md"
+    "HOST_INSTALL_LOG.md",
+    "tests/test_audit_regressions.py",
+    "tests/test_helpers.py"
   ]
 }

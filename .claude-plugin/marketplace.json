@@ -1,6 +1,6 @@
 {
   "name": "jesseraber-github-release",
-  "description": "v1.0.0 GitHub Release Agent Skill by Jesse Raber",
+  "description": "v1.1.0 GitHub Release Agent Skill by Jesse Raber",
   "owner": {
     "name": "Jesse Raber",
     "url": "https://github.com/JesseRaber"
@@ -9,7 +9,7 @@
     {
       "name": "github-release",
       "source": "./",
-      "description": "v1.0.0 GitHub Release by Jesse Raber: make repository edits with focused checks and PR preparation; create Agent Skill repositories, gate versions, build host packages, verify assets, and record installs.",
+      "description": "v1.1.0 GitHub Release by Jesse Raber: make repository edits with focused checks and PR preparation; create Agent Skill repositories, gate versions, build host packages, verify assets, and record installs.",
       "license": "MIT",
       "homepage": "https://github.com/JesseRaber/github-release"
     }

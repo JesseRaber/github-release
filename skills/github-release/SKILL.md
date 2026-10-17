@@ -1,19 +1,23 @@
 ---
 name: github-release
-description: v1.0.0 GitHub Release by Jesse Raber. Make ordinary GitHub repository edits through a focused diff, relevant checks and PR workflow; set up and release Agent Skills with version agreement, a pre-tag gate, host-specific packages, draft-first publishing, asset verification and host install records. Use for repository edits or PR preparation, skill repository setup, preparing or verifying a skill release, choosing a host ZIP, or recording an installation.
+description: v1.1.0 GitHub Release by Jesse Raber. Make ordinary GitHub repository edits through a focused diff, relevant checks and PR workflow; set up and release Agent Skills with version agreement, a pre-tag gate, host-specific packages, draft-first publishing, asset verification and host install records. Use for repository edits or PR preparation, skill repository setup, preparing or verifying a skill release, choosing a host ZIP, or recording an installation.
 license: MIT
 metadata:
-  version: "1.0.0"
+  version: "1.1.0"
   repository: https://github.com/JesseRaber/github-release
 ---
 
 # GitHub Release
 
-**Version:** 1.0.0 · **Repository:** https://github.com/JesseRaber/github-release · **Author:** Jesse Raber
+## Distribution intent comes first
+
+Before setup/release preparation, or an edit to ownership/sharing/licensing/promotion, follow [distribution policy](references/distribution-policy.md). Establish the owner-approved audience and rights; keep private work within the owner-selected internal/private audience and authorized accounts/tools and promote public work only within approved scope. Public visibility does not choose a license; never default every project to MIT. Preserve prior grants and third-party notices. This skill's own MIT license is not a license choice for projects it handles.
+
+**Version:** 1.1.0 · **Repository:** https://github.com/JesseRaber/github-release · **Author:** Jesse Raber
 
 A release is right the first time when the bytes you tested are the bytes people download, every host gets a package it accepts, and the record says which host has which version and how anyone knows.
 
-Report as: **Loaded GitHub Release v1.0.0 (SKILL.md at <path you loaded>)**. State the mode in the first line. The path lets install checks detect shadow copies and stale channels.
+Report as: **Loaded GitHub Release v1.1.0 (SKILL.md at <path you loaded>)**. State the mode in the first line. The path lets install checks detect shadow copies and stale channels.
 
 ## Choose the mode
 

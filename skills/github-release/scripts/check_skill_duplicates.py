@@ -27,7 +27,7 @@ from pathlib import Path
 import re
 import sys
 
-__version__ = '1.0.0'
+__version__ = '1.1.0'
 BACKUP_HINT = re.compile(r'backup|\.bak|\.old|pre-v\d|\.orig', re.I)
 
 
