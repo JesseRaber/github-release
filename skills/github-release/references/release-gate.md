@@ -9,7 +9,7 @@ Use in **Prepare** (make the candidate) and **Gate** (judge it, read-only). The 
 A skill version appears in more places than CI usually checks. List them in `packaging/version_files.json` (template in `templates/`) and run:
 
 ```bash
-python packaging/check_versions.py --repo . --version 1.2.0 --previous 1.1.0
+python packaging/check_versions.py --repo . --version 1.2.0 --previous 1.1.1
 ```
 
 Typical touch points:
