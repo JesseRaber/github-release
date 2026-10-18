@@ -26,16 +26,16 @@ For a skill release:
 ```mermaid
 flowchart LR
     P[Prepare\ncandidate + checks] --> G[Gate\nG0-G14, read-only]
-    G -->|owner approves tag| T[Tag pushed\nworkflow builds DRAFT]
+    G -->|scope includes tag| T[Tag pushed\nworkflow builds DRAFT]
     T --> V[Verify draft\nbytes == candidate]
-    V -->|owner approves publish| R[Published\nimmutable]
+    V -->|scope includes publish| R[Published\nimmutable]
     R --> H[Host installs\nlogged per channel]
 ```
 
 ## What it enforces
 
-- Creating a repository, pushing, tagging, publishing, changing settings and installing into hosts are separate owner approvals.
-- Gate first, tag second. The release workflow creates a **draft**; the draft's assets are verified against the local candidate before a person publishes.
+- Record explicit approval of the concrete repository, changes, audience and intended steps once. Continue included ordinary steps without repeated prompts; preparation alone grants no remote action. Preserve validation, material-scope boundaries and mandatory host/security/irreversible-action confirmations. See [approval scope](skills/github-release/references/approval-scope.md).
+- Gate first, tag second. The release workflow creates a **draft**; the draft's assets are verified against the local candidate before publication proceeds within the approved scope.
 - Published bytes are never replaced. A defect ships as a new patch version.
 - Every host rule carries a date and a source.
 

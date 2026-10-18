@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1
+
+- Fix contradictory separate-approval instructions: one explicit scope can cover the agreed workflow without repeated prompts.
+- Preserve required validation, authorization boundaries, draft-first publication and mandatory host confirmations.
+- Patch release: instruction correction, no new mode/helper interface/package layout.
+
 ## 1.1.0
 
 Minor: new distribution-scope prerequisite that can stop a previously permitted release.

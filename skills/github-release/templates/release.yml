@@ -1,6 +1,6 @@
 # Release workflow template from the github-release skill.
 # Copy to .github/workflows/release.yml. On a pushed tag vX.Y.Z it gates, builds,
-# and creates a DRAFT release. A person publishes the draft after verifying it.
+# and creates a DRAFT release. Publish only within approved scope after draft verification.
 # It never replaces assets of an existing release.
 # Actions are pinned by full commit SHA with the release tag in a comment (resolved
 # 2026-10-09); the validator is pinned by commit. Review pins before first use.

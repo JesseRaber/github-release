@@ -2,14 +2,14 @@
 
 Before this step, verify the recorded [distribution scope and licensing](distribution-policy.md): owner-approved audience, permitted use, consistent source/package notices and metadata, destination/visibility and retained prior/third-party rights. A private no-sharing decision blocks unauthorized distribution. Public visibility alone is not a license selection. Report mismatches before proceeding; this check grants no publication or access-change permission.
 
-Use in **Publish**. Every step that changes GitHub needs the owner's explicit approval for that step. The release workflow template (`templates/release.yml`) builds on a pushed tag, creates a **draft** release, and refuses if a release for the tag already exists.
+Use in **Publish**. Every action that changes GitHub must be included in the recorded [approval scope](approval-scope.md); one scope may cover the entire release workflow. The release workflow template (`templates/release.yml`) builds on a pushed tag, creates a **draft** release, and refuses if a release for the tag already exists.
 
 ## 1. Approval block
 
-Before any push, show this and wait for an explicit yes:
+Before any push, verify existing approval covers the intended actions and effects. If not, present one consolidated scope bundle and obtain the missing approval. The following is the tag/draft evidence section of that bundle, not a mandatory extra prompt:
 
 ```text
-APPROVAL NEEDED — tag and draft release
+SCOPE AND EVIDENCE - tag and draft release
 Repository:   <owner>/<repo>
 Commit:       <full sha>  (<branch>, CI run <link>: green)
 Tag:          v<version>  (annotated, on the commit above)
@@ -17,7 +17,8 @@ Gate:         PASS  (<gate report path>)
 Candidate:    <folder>  SHA256SUMS <first 12>
 Workflow:     builds packages, creates DRAFT release with <N> assets; nothing public yet
 Immutable releases: ON | OFF  (repository setting, read <date>)
-Not included: publishing the draft, repository settings, host installs
+Other included actions: <publication / named-host installs only if explicitly scoped>
+Excluded:     <all unlisted actions, settings/access changes and destructive recovery>
 ```
 
 An approval covers only what the block lists. When immutable releases are **OFF**, ask the owner once, before the first publish of the repository (or of this session), whether to turn the setting on (owner's browser, about a minute) — then record the answer in the approval block. Do not ask again in the same release. Observed: immutable releases stayed off for three skill-run releases because nothing forced the decision.
@@ -92,7 +93,7 @@ If anything fails: delete the draft (approval), fix, rebuild. If the tag must mo
 
 ## 4. Publish
 
-Second approval block: version, asset list with hashes, verify result. On yes:
+Record version, asset list with hashes and passing verify result. If publication is already included and scope/effects are unchanged, continue without a second prompt. Otherwise obtain approval only for publication and its consequences:
 
 ```bash
 gh release edit v1.2.0 --draft=false
@@ -107,8 +108,8 @@ With immutable releases enabled in repository settings, assets and the tag are l
 - Download the published assets again into the project's local release folder and run `verify_release.py --expect-published --notes packaging/RELEASE_NOTES_v1.2.0.md` against the published metadata (`gh api repos/<owner>/<repo>/releases/tags/v1.2.0`), adding `--expect-immutable` when the approval block said ON. The record says which.
 - **Release body after publishing.** Assets and tag are locked; the body is not. The only allowed edit is to **append** a dated section `## Known issues (added YYYY-MM-DD)` that names the defect and the fixing version; never rewrite the original text. Log the edit in the release record. `verify_release.py --notes` accepts exactly that shape and FAILs any other difference.
 - Remove the project's "Release in progress" marker (gate G0) after publishing — or after abandoning the release, saying why.
-- Published releases do not update any host. Each host install is a separate action and a separate install-log row ([verify-and-record.md](verify-and-record.md)).
-- Delete the merged release branch (approval), recording its tip SHA for recovery; list any other remote branches whose tips are ancestors of `main` for a separate owner decision. Repositories with "automatically delete head branches" enabled (repo-setup default) skip the first step.
+- Published releases do not update any host. Each named host install needs explicit scope coverage (which may be in the initial bundle) and a separate install-log row ([verify-and-record.md](verify-and-record.md)).
+- Delete the merged release branch only when that exact deletion is explicitly included and any mandatory action-time confirmation is satisfied, recording its tip SHA for recovery; list any other remote branches whose tips are ancestors of `main` for a separate owner decision. Repositories with "automatically delete head branches" enabled (repo-setup default) skip the first step.
 - Update the project's records: tracker, quick context, index.
 
 ## Never

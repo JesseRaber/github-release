@@ -14,7 +14,7 @@ Expected state — verify before any work, stop on mismatch:
 
 Commit identity in the fresh clone: <owner name> <<owner GitHub noreply address>>. AI attribution only as a Co-Authored-By trailer.
 
-Mode: Prepare + Gate only. Tag, draft, publish and settings are separate owner approvals (publish.md).
+Mode: Prepare + Gate only. Tag, draft, publish and settings are outside this prompt. They may be included in a later explicit consolidated approval scope (references/approval-scope.md); mandatory settings/security confirmations remain.
 Candidate goes to: <folder, labeled NOT RELEASED>.
 Stop points: after the gate report; before anything that changes GitHub.
 ```
