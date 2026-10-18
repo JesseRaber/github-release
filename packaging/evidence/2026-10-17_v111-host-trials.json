@@ -1,0 +1,43 @@
+{
+  "recorded_at": "2026-10-17T20:14:27.981295-04:00",
+  "checks": [
+    {
+      "host": "Codex",
+      "version": "1.1.1",
+      "asset": "github-release-1.1.1-UNIVERSAL-skill.zip",
+      "sha256": "94cb35c9f9f084dea15249dd85a4ee1057a6a43ed156ca06890435d56fa00662",
+      "files": 28,
+      "missing": 0,
+      "extra": 0,
+      "different": 0,
+      "resolved_skill": "C:/Users/JesseRaber/.codex/skills/github-release/SKILL.md",
+      "trial_equals_published": true,
+      "loaded_smoke": "PASS fresh normal CLI, all8 simulated scope cases",
+      "helpers": "3/3 version1.1.1 exit0",
+      "duplicates": "PASS exactly one target",
+      "evidence": "packaging/evidence/2026-10-17_v111-codex-trial.md",
+      "interactive_picker": "NOT RUN"
+    },
+    {
+      "host": "Claude Code",
+      "version": "1.1.1",
+      "asset": "github-release-1.1.1-claude-code-plugin.zip",
+      "sha256": "c3165153c0b83da9246de8bebf709a6f2832c85c0cb58ee4e23ab175eeaa98c9",
+      "files": 32,
+      "missing": 0,
+      "extra": 0,
+      "different": 0,
+      "resolved_skill": "C:/Users/JesseRaber/.claude/local-marketplaces/github-release/skills/github-release/SKILL.md",
+      "trial_equals_published": true,
+      "loaded_smoke": "PASS fresh normal CLI, all8 simulated scope cases",
+      "helpers": "3/3 version1.1.1 exit0",
+      "duplicates": "PASS exactly one target",
+      "evidence": "packaging/evidence/2026-10-17_v111-claude-trial.md",
+      "interactive_picker": "NOT RUN"
+    }
+  ],
+  "assessment": "Primary agent manually evaluated actual replies for A-H",
+  "scope_approval_rounds": 1,
+  "additional_phase_approval_prompts": 0,
+  "limits": "No comparative savings measured; interactive GUI and other hosts unverified"
+}
