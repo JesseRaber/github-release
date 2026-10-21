@@ -440,3 +440,20 @@ class CiTemplateTests(unittest.TestCase):
             for line in (SKILL / 'templates' / wf).read_text(encoding='utf-8').splitlines():
                 if 'uses: actions/' in line:
                     self.assertRegex(line, r'@[0-9a-f]{40} # v\d+\.\d+\.\d+$', line)
+
+
+class FinishReleaseScriptTests(unittest.TestCase):
+    def test_finish_release_parses_without_errors(self):
+        import shutil
+        pwsh = shutil.which('pwsh')
+        if not pwsh:
+            self.skipTest('pwsh not installed')
+        script = SKILL / 'scripts' / 'Finish-Release.ps1'
+        cmd = ("$e=$null;$null=[System.Management.Automation.Language.Parser]::ParseFile("
+               f"'{script}',[ref]$null,[ref]$e);if($e){{$e|%{{$_.Message}};exit 1}}")
+        r = subprocess.run([pwsh, '-NoLogo', '-NoProfile', '-Command', cmd], capture_output=True, text=True)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+
+    def test_finish_release_is_version_tracked(self):
+        cfg = json.loads((REPO / 'packaging/version_files.json').read_text(encoding='utf-8'))
+        self.assertIn('skills/github-release/scripts/Finish-Release.ps1', [f['path'] for f in cfg['files']])

@@ -27,7 +27,7 @@ Read immutable-release status from the repository setting at approval time. A dr
 
 ## 2. Where release actions run
 
-Cloud agent sessions are refused these steps by two different sources: the network proxy or GitHub API (`remote end hung up`, HTTP 403 "editing releases not permitted"), and the session's own **safety classifier** (denials such as "merge without review" or "create public surface"). Both were observed repeatedly (2026-10-08 pilot, 2026-10-09 v1.7.0 and v1.7.1). Treat the refusals below as **expected: do not attempt them from a cloud session**; plan them as owner steps from the start:
+Cloud agent sessions are refused these steps by two different sources: the network proxy or GitHub API (`remote end hung up`, HTTP 403 "editing releases not permitted"), and the session's own **safety classifier** (denials such as "merge without review" or "create public surface"). Both were observed repeatedly (2026-10-08 pilot, 2026-10-09 v1.7.0 and v1.7.1; again 2026-10-20 for merge, tag push and draft publish). Treat the refusals below as **expected: do not attempt them from a cloud session**; plan them as owner steps from the start:
 
 | Action | Cloud agent session | Owner's machine |
 |---|---|---|
@@ -38,7 +38,30 @@ Cloud agent sessions are refused these steps by two different sources: the netwo
 | Delete a remote branch | expected: refused (observed 2026-10-09) | `git push origin --delete <branch>` |
 | Repository settings (branch protection, immutable releases) | expected: refused | owner's browser or `gh`; may require the owner's **passkey ("sudo mode")** — the agent must stop and ask the owner to complete it; never ask for the credential |
 
-Do not retry a refused step through another route; the refusal changes where the step runs, never the approval for it. Give the owner **one combined command block** per hand-off so there is one round trip, not one per step:
+Do not retry a refused step through another route; the refusal changes where the step runs, never the approval for it.
+
+### Preferred: one owner run of `Finish-Release.ps1`
+
+The two-round command block below still needs the owner twice: merge and tag, then publish after the draft check. `scripts/Finish-Release.ps1` collapses these into one run that waits for the draft itself. The agent:
+
+1. Finishes the gate and opens the release PR with CI green. It records the tested head SHA and saves the gated `SHA256SUMS.txt` where the owner's machine can read it (a project folder; never a repo working tree).
+2. Gives the owner **one** prefilled command, with every value taken from the gate:
+
+```powershell
+pwsh -File "<path>\Finish-Release.ps1" -Repo <owner>/<repo> -PullRequest <n> -Version <x.y.z> `
+  -TestedHeadSha <40-char sha> -ExpectedSums "<path>\SHA256SUMS.txt" -ReleaseTitle "<skill> v<x.y.z>" `
+  -MergeMethod squash -CopyTo "<project>\Release Packages\v<x.y.z>" `
+  -LogPath "<project>\Incoming\<date>_<tool>_<topic>\FINISH_RELEASE_v<x.y.z>.log" `
+  [-PostReleaseScript "<path>\Update-....ps1" -PostReleaseArgs '-SoftwareVersion','<x.y.z>']
+```
+
+3. Reads the log and `.json` receipt from `-LogPath` (or the pasted `RESULT` lines) and records the outcome. A `STOPPED` receipt names the failed check. Fix the cause and have the owner re-run the same command; finished steps are detected and skipped, never repeated.
+
+The script shows every step and asks the owner to type the tag once (`-Yes` skips the prompt; `-DryRun` runs only the read-only checks). It merges only if the PR head is the tested SHA and every check run passed. It tags only after the merged tree equals the tested tree and CI on the merge commit is green. It tags from a fresh temp clone, which avoids synced-folder ownership errors. It publishes only after the draft was made by the workflow, carries the expected title and matches every gated hash. It never overwrites a different file in `-CopyTo`. Typing the tag is the owner's action-time approval for exactly those steps; it does not widen scope. Requires PowerShell 7, `git`, and `gh` signed in as the owner.
+
+### Fallback: combined command block
+
+Without PowerShell 7 or `gh`, give the owner **one combined command block** per hand-off so there is one round trip per phase, not one per step:
 
 ```text
 OWNER COMMANDS — <skill> v<version>   (each line is covered by the approval named on it)

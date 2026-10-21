@@ -9,7 +9,7 @@ encoding damage, lints the release workflow for draft-first publishing, and
 optionally lists repository copies that drifted from the skill's templates.
 
 Usage:
-  python check_versions.py --repo . --version 1.2.0 [--previous 1.1.1]
+  python check_versions.py --repo . --version X.Y.Z [--previous X.Y.W]
                            [--config packaging/version_files.json]
                            [--workflow .github/workflows/release.yml]
                            [--drift-against path/to/skills/github-release]
@@ -27,7 +27,7 @@ import re
 import shlex
 import sys
 
-__version__ = '1.1.1'
+__version__ = '1.2.0'
 SEMVER = re.compile(r'^\d+\.\d+\.\d+$')
 TEXT_SUFFIXES = {'.md', '.py', '.json', '.yml', '.yaml', '.txt', '.ps1', '.toml', '.cfg'}
 SKIP_DIRS = {'.git', '__pycache__', 'node_modules', 'dist'}
