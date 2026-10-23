@@ -6,4 +6,4 @@ This package has no PowerShell files. The Python helpers need only the standard 
 
 A successful upload proves only package acceptance. Test with a read-only request such as "Is this repository ready to tag?".
 
-Expected loaded version: **GitHub Release v1.1.1**.
+Expected loaded version: **GitHub Release v1.2.0**.

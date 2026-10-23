@@ -71,6 +71,10 @@
     {
       "path": "CHANGELOG.md",
       "pattern": "^## {v}"
+    },
+    {
+      "path": "skills/github-release/scripts/Finish-Release.ps1",
+      "pattern": "^\\$ScriptVersion = '{v}'"
     }
   ],
   "history": [
@@ -79,6 +83,7 @@
     "HOST_INSTALL_LOG.md",
     "tests/test_audit_regressions.py",
     "tests/test_helpers.py",
-    "packaging/evidence/*"
+    "packaging/evidence/*",
+    "tests/approval_behavior/README.md"
   ]
 }

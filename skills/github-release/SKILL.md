@@ -1,9 +1,9 @@
 ---
 name: github-release
-description: v1.1.1 GitHub Release by Jesse Raber. Make ordinary GitHub repository edits through a focused diff, relevant checks and PR workflow; set up and release Agent Skills with version agreement, a pre-tag gate, host-specific packages, draft-first publishing, asset verification and host install records. Use for repository edits or PR preparation, skill repository setup, preparing or verifying a skill release, choosing a host ZIP, or recording an installation.
+description: v1.2.0 GitHub Release by Jesse Raber. Make ordinary GitHub repository edits through a focused diff, relevant checks and PR workflow; set up and release Agent Skills with version agreement, a pre-tag gate, host-specific packages, draft-first publishing, asset verification and host install records. Use for repository edits or PR preparation, skill repository setup, preparing or verifying a skill release, choosing a host ZIP, or recording an installation.
 license: MIT
 metadata:
-  version: "1.1.1"
+  version: "1.2.0"
   repository: https://github.com/JesseRaber/github-release
 ---
 
@@ -13,11 +13,11 @@ metadata:
 
 Before setup/release preparation, or an edit to ownership/sharing/licensing/promotion, follow [distribution policy](references/distribution-policy.md). Establish the owner-approved audience and rights; keep private work within the owner-selected internal/private audience and authorized accounts/tools and promote public work only within approved scope. Public visibility does not choose a license; never default every project to MIT. Preserve prior grants and third-party notices. This skill's own MIT license is not a license choice for projects it handles.
 
-**Version:** 1.1.1 · **Repository:** https://github.com/JesseRaber/github-release · **Author:** Jesse Raber
+**Version:** 1.2.0 · **Repository:** https://github.com/JesseRaber/github-release · **Author:** Jesse Raber
 
 A release is right the first time when the bytes you tested are the bytes people download, every host gets a package it accepts, and the record says which host has which version and how anyone knows.
 
-Report as: **Loaded GitHub Release v1.1.1 (SKILL.md at <path you loaded>)**. State the mode in the first line. The path lets install checks detect shadow copies and stale channels.
+Report as: **Loaded GitHub Release v1.2.0 (SKILL.md at <path you loaded>)**. State the mode in the first line. The path lets install checks detect shadow copies and stale channels.
 
 ## Choose the mode
 
@@ -38,6 +38,7 @@ For an ordinary repository edit, read **Edit** only; do not load the release gat
 ## Hard rules
 
 1. **One scoped approval; no redundant prompts.** Obtain or reuse explicit owner authorization covering the concrete repository, changes, audience and intended actions. A single approval may cover an entire push/PR/merge/tag/draft/publish/verify workflow. Continue through its agreed steps without re-asking when scope and effects are unchanged, including normal validation and safe retries. Preparation alone grants no remote action. Stop before unapproved actions, materially changed scope or unresolved failures. Mandatory host/platform approvals and security safeguards still apply. Read [approval scope](references/approval-scope.md).
+   **Cloud sessions:** merge, tag push and publish are refused there (publish.md §2). At the first approval, plan them as **one owner run** of `scripts/Finish-Release.ps1`, prefilled from your gate. Do not try each step first and stop three times.
 2. **A pushed tag starts a release build.** Gate first, tag second. Never tag a commit whose local candidate build and gate have not passed.
 3. **Draft first.** The workflow creates a draft. Verify the draft's downloaded assets against the local candidate, then publish if the recorded scope includes publication and all required checks pass; otherwise ask only for missing publication scope. A failed draft blocks publication; reconcile it before explicitly authorized deletion/rebuild. Never infer destructive recovery permission from release approval.
 4. **Never replace published bytes.** No `--clobber`, no re-upload, no force-moved tag after publication, no hand-created release. A defect in a published release ships as a new patch version; the published body only gains an appended, dated "Known issues" section. Prefer GitHub immutable releases; every publish approval states whether they are ON or OFF.
@@ -56,4 +57,4 @@ For an ordinary repository edit, read **Edit** only; do not load the release gat
 
 ## Helpers
 
-`scripts/check_versions.py` (version agreement, stale versions, workflow safety lint), `scripts/verify_release.py` (published assets vs checksums, GitHub digests, release state and the local candidate) and `scripts/check_skill_duplicates.py` (duplicate skill names under host skill folders, after an install) are read-only, standard-library Python 3.8+, and need no network. All accept `--version`. Skill repositories keep copies in `packaging/` (see repo-setup.md). Templates for the builder, workflow and records are in `templates/`; some host packages omit them (see host-matrix.md).
+`scripts/check_versions.py` (version agreement, stale versions, workflow safety lint), `scripts/verify_release.py` (published assets vs checksums, GitHub digests, release state and the local candidate) and `scripts/check_skill_duplicates.py` (duplicate skill names under host skill folders, after an install) are read-only, standard-library Python 3.8+, and need no network. All accept `--version`. Skill repositories keep copies in `packaging/` (see repo-setup.md). `scripts/Finish-Release.ps1` (PowerShell 7, owner's machine, `gh` + `git`) runs the steps a cloud session cannot. With one typed approval it merges, tags, waits for the draft, verifies every asset against the gated `SHA256SUMS.txt`, publishes, re-verifies, files the assets. It stops at the first failed check, never overwrites, reconciles completed remote steps on re-run and writes a log plus JSON receipt (publish.md §2). Templates for the builder, workflow and records are in `templates/`; some host packages omit them (see host-matrix.md).

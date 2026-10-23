@@ -27,7 +27,7 @@ Read immutable-release status from the repository setting at approval time. A dr
 
 ## 2. Where release actions run
 
-Cloud agent sessions are refused these steps by two different sources: the network proxy or GitHub API (`remote end hung up`, HTTP 403 "editing releases not permitted"), and the session's own **safety classifier** (denials such as "merge without review" or "create public surface"). Both were observed repeatedly (2026-10-08 pilot, 2026-10-09 v1.7.0 and v1.7.1). Treat the refusals below as **expected: do not attempt them from a cloud session**; plan them as owner steps from the start:
+Cloud agent sessions are refused these steps by two different sources: the network proxy or GitHub API (`remote end hung up`, HTTP 403 "editing releases not permitted"), and the session's own **safety classifier** (denials such as "merge without review" or "create public surface"). Both were observed repeatedly (2026-10-08 pilot, 2026-10-09 v1.7.0 and v1.7.1; again 2026-10-20 for merge, tag push and draft publish). Treat the refusals below as **expected: do not attempt them from a cloud session**; plan them as owner steps from the start:
 
 | Action | Cloud agent session | Owner's machine |
 |---|---|---|
@@ -38,7 +38,32 @@ Cloud agent sessions are refused these steps by two different sources: the netwo
 | Delete a remote branch | expected: refused (observed 2026-10-09) | `git push origin --delete <branch>` |
 | Repository settings (branch protection, immutable releases) | expected: refused | owner's browser or `gh`; may require the owner's **passkey ("sudo mode")** — the agent must stop and ask the owner to complete it; never ask for the credential |
 
-Do not retry a refused step through another route; the refusal changes where the step runs, never the approval for it. Give the owner **one combined command block** per hand-off so there is one round trip, not one per step:
+Do not retry a refused step through another route; the refusal changes where the step runs, never the approval for it.
+
+### Preferred: one owner run of `Finish-Release.ps1`
+
+The two-round command block below still needs the owner twice: merge and tag, then publish after the draft check. `scripts/Finish-Release.ps1` collapses these into one run that waits for the draft itself. The agent:
+
+1. Finishes the gate and opens the release PR with CI green. It records the tested head SHA and saves the gated `SHA256SUMS.txt` where the owner's machine can read it (a project folder; never a repo working tree).
+2. Gives the owner **one** prefilled command, with every value taken from the gate. RequiredChecks lists the reviewed successful check names and must include every branch-required context. The helper supports protected default-branch releases with check-run based CI; unsupported or unavailable protection/check evidence blocks continuation. Pass a PowerShell array for multiple check names (as shown); do not silently drop checks:
+
+```powershell
+& "<path>\Finish-Release.ps1" -Repo <owner>/<repo> -PullRequest <n> -Version <x.y.z> `
+  -TestedHeadSha <40-char sha> -ExpectedBaseSha <40-char base sha> `
+  -RequiredChecks @("<check name>", "<other required check>") `
+  -ExpectedVisibility <private|public> -ImmutableReleases <ON|OFF> `
+  -ExpectedNotes "<path>\RELEASE_NOTES_v<x.y.z>.md" -ExpectedSums "<path>\SHA256SUMS.txt" -ReleaseTitle "<skill> v<x.y.z>" `
+  -MergeMethod squash -CopyTo "<project>\Release Packages\v<x.y.z>" `
+  -LogPath "<project>\Incoming\<date>_<tool>_<topic>\FINISH_RELEASE_v<x.y.z>.log"
+```
+
+3. Reads the log and `.json` receipt from `-LogPath` (or the pasted `RESULT` lines) and records the outcome. A `STOPPED` receipt names the failed check. Fix the cause and have the owner re-run the same command; finished steps are detected and skipped, never repeated.
+
+Run this block in PowerShell 7. The script shows every step and asks the owner to type the tag once. Use `-Yes -ApprovalReference "<recorded owner scope>"` only when sufficient approval already covers these exact actions; it cannot waive mandatory host/platform confirmations. `-DryRun` performs remote reads and local temporary/log writes, with unexecuted steps explicitly marked PLAN; it is not a full release gate PASS. It verifies the tested head even on resume, the expected base before merge, and every required check succeeds; missing, pending, skipped, neutral or failed checks block advancement. It checks the predicted merge tree before merging. It tags only after the merged tree equals the tested tree and CI on the merge commit is green. It tags from a fresh temp clone, which avoids synced-folder ownership errors. It publishes only after the exact-tag release workflow succeeds, the draft has the expected author/title/notes and matches every gated hash. It rechecks the tag, approved private/public audience, immutable policy and downloaded draft assets immediately before publication. Published immutability is verified when expected ON. It never overwrites a different file in `-CopyTo`. Typing the tag approves only the displayed workflow; it does not widen scope or substitute for platform/security confirmations. Resume rechecks completed remote state; tag lookup errors other than explicit HTTP404 stop the run. No arbitrary post-release hook is run. Continue already-approved named-host installs separately with their own backup/byte/load checks; do not ask again solely because that phase changed. Temporary evidence is retained for reconciliation rather than automatically deleted. Requires PowerShell 7, `git`, and `gh` signed in as the owner.
+
+### Fallback: combined command block
+
+Without PowerShell 7 or `gh`, give the owner **one combined command block** per hand-off so there is one round trip per phase, not one per step:
 
 ```text
 OWNER COMMANDS — <skill> v<version>   (each line is covered by the approval named on it)
