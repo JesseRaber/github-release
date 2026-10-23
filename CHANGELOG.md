@@ -5,6 +5,8 @@
 - Added `scripts/Finish-Release.ps1`: one owner run with a single typed approval merges the release PR, tags the merge commit, waits for the workflow draft, verifies every asset against the gated `SHA256SUMS.txt`, publishes, re-verifies, files the assets. It stops at the first failed check, never overwrites, reconciles completed remote steps and writes a log and JSON receipt.
 - Cloud-session releases now plan merge, tag push and publish as that one owner run from the first approval, instead of attempting each step and stopping three times.
 
+- Ignore skipped/neutral conditional jobs outside the required CI gate while preserving strict required-check and real-failure handling.
+
 ## 1.1.1
 
 - Fix contradictory separate-approval instructions: one explicit scope can cover the agreed workflow without repeated prompts.

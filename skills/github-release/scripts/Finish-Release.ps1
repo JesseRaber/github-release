@@ -68,7 +68,14 @@ function Check-State([string]$sha) {
     # Select the latest result per check name; never accept an earlier green retry.
     $latest = @($runs | Group-Object name | ForEach-Object { $_.Group | Sort-Object id -Descending | Select-Object -First 1 })
     $missing = @($RequiredChecks | Where-Object { $_ -notin @($latest | ForEach-Object { $_.name }) })
-    $failed = @($latest | Where-Object { $_.status -eq 'completed' -and $_.conclusion -ne 'success' })
+    # Required checks must succeed. Conditional jobs outside the gate (for example
+    # the draft job skipped on a CI-only dispatch) are not required checks. Their
+    # skipped/neutral results are neither gate passes nor release failures.
+    $failed = @($latest | Where-Object {
+        $_.status -eq 'completed' -and
+        (($_.name -in $RequiredChecks -and $_.conclusion -ne 'success') -or
+         $_.conclusion -notin 'success', 'skipped', 'neutral')
+    })
     if ($failed) { Fail 'CI' ("non-passing checks: " + (($failed | ForEach-Object { "$($_.name)=$($_.conclusion)" }) -join ', ')) }
     return ($latest.Count -gt 0 -and -not $missing -and -not @($latest | Where-Object { $_.status -ne 'completed' }))
 }

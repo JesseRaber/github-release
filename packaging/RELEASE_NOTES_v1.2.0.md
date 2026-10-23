@@ -11,6 +11,8 @@ An approved release can continue through an owner-run helper when the current se
 - Checks include the reviewed head/base, successful required CI, merge-tree identity, exact-tag workflow, approved audience/immutable policy, reviewed notes and asset hashes. Skipped checks are not passes.
 - Arbitrary post-release commands are excluded; named-host installation remains separately verified within its approved scope.
 
+- Conditional jobs skipped outside the required CI gate do not block completion; required checks must succeed and genuine failures still stop the run.
+
 ## Compatibility
 
 Existing modes, Python helpers, host formats and the MIT license are unchanged. The script needs PowerShell 7, `git` and a signed-in GitHub CLI. Copilot and Gemini packages omit `.ps1` files as before. Approval to prepare still grants no remote action, and a release does not update installed hosts automatically.
