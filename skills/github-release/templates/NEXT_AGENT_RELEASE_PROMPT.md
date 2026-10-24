@@ -40,7 +40,9 @@ affected checks. Ask only for missing/materially changed scope or mandatory host
 confirmation. Failed required checks stop advancement; repair within scope and
 retest. Unknown remote outcomes require reconciliation before retry. At an
 explicit scope boundary, report completion and stop; do not request a broader
-bundle merely because later release phases exist.
+bundle merely because later release phases exist. If a requested deliverable
+remains outside recorded scope, prepare its reviewable result and seek only the
+missing scope for that deliverable; a completed endpoint is different.
 ```
 
 Run release gate G0 for release preparation; ordinary edits use the focused Edit workflow.
