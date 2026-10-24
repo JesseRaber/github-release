@@ -209,3 +209,19 @@ class FinishReleaseBehaviorTests(unittest.TestCase):
                                       dict(id=2, name='test', status='completed', conclusion='skipped')])
         self.assertNotEqual(r.returncode, 0)
         self.assertEqual(calls, [])
+
+    def test_optional_conditional_skip_does_not_block_required_success(self):
+        for conclusion in ['skipped', 'neutral']:
+            checks = [dict(id=1, name='test', status='completed', conclusion='success'),
+                      dict(id=2, name='draft', status='completed', conclusion=conclusion)]
+            r, calls = self.run_case(checks=checks)
+            self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+            self.assertEqual(calls, ['merge', 'tag', 'publish'])
+
+    def test_optional_real_failure_still_blocks_mutations(self):
+        for conclusion in ['failure', 'cancelled', 'timed_out']:
+            checks = [dict(id=1, name='test', status='completed', conclusion='success'),
+                      dict(id=2, name='extra-validation', status='completed', conclusion=conclusion)]
+            r, calls = self.run_case(checks=checks)
+            self.assertNotEqual(r.returncode, 0, r.stdout)
+            self.assertEqual(calls, [])
