@@ -26,6 +26,7 @@ def main():
     ap.add_argument("--output", required=True, help="new evidence directory")
     ap.add_argument("--expected-skill", required=True,
                     help="installed SKILL.md; never passed to model")
+    ap.add_argument("--handoff-template", help="candidate handoff guidance to test without installing; source evidence, not installed behavior")
     ap.add_argument("--timeout", type=int, default=300)
     args = ap.parse_args()
     out = Path(args.output).resolve()
@@ -55,6 +56,15 @@ def main():
                         harness_sha256={p.name: hashlib.sha256(p.read_bytes()).hexdigest()
                                         for p in [HERE / "run.py", HERE / "check.py"]})
         prompt = make_prompt()
+        if args.handoff_template:
+            handoff = Path(args.handoff_template).resolve()
+            snapshot[str(handoff)] = handoff.read_bytes()
+            metadata["candidate_handoff"] = str(handoff)
+            metadata["candidate_handoff_sha256"] = hashlib.sha256(snapshot[str(handoff)]).hexdigest()
+            metadata["kind"] = "installed identity plus candidate handoff decision simulation"
+            prompt += ("\n\nAdditional reviewed candidate handoff guidance (not installed/released; "
+                       "apply its scope rules to these hypothetical handoffs):\n" +
+                       snapshot[str(handoff)].decode("utf-8"))
         (out / "prompt.txt").write_text(prompt, encoding="utf-8")
         save(out / "response-schema.json", response_schema())
         executable = shutil.which(args.host)

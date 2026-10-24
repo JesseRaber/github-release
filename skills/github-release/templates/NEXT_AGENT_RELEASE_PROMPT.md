@@ -1,22 +1,48 @@
-# Release handoff prompt — fill every <angle> field before sending
+# Release handoff prompt — fill fields and select exactly one scope variant
 
-Copy this into the next agent's chat to hand off a release. The receiving agent runs gate G0 against these values FIRST and refuses on any mismatch — a handoff without expected hashes has produced stale-base release PRs (observed); with them, drift was caught before any work (observed 2026-10-08).
+Carry the owner's actual scope, not a new approval inferred from this template. Keep the completed handoff with session records. A change of agent, host or phase alone does not expire approval. Later owner exclusions override an older broader bundle. Verify source/remote state and evidence before advancing; a handoff is evidence to reconcile, not permission to skip checks.
 
 ```text
-Release task: build and gate <skill> v<version> in <owner>/<repo>. One release lane: refuse if any other release PR or v*-branch is open.
+Task: continue <skill> <version or ordinary edit> in <owner>/<repo>.
+Original owner approval: <exact instruction or durable reference, who/when>.
+Selected scope variant: <Prepare-only | PR-only | Approved workflow>.
+Included actions: <explicit bounded actions>.
+Excluded actions: <explicit owner limits; retain latest narrowing>.
+Audience/visibility/rights: <approved recipients, public/private, license/terms>.
+Named-host updates: <explicit hosts, or none>.
+Mandatory host/platform confirmations: <required at action time; never pre-waived>.
 
-Expected state — verify before any work, stop on mismatch:
-- main SHA: <full sha from `git ls-remote origin main`>
-- open release PRs: none (or: #<n> is mine to continue)
-- tag v<version>: must not exist
-- tracker/register file: <path> sha256 <first 12>
-- release marker: <path and line the project's rules define, e.g. AI_CONTEXT/PROJECT_QUICK_CONTEXT.md "Release in progress:"> must be empty or yours; write it before the first push (or: "project defines no marker")
+Expected state — recheck before advancement:
+- base branch and full SHA: <value>
+- reviewed head SHA and tree: <values or not created yet>
+- existing PR: <number/head/base, or none>; completed actions: <verified state>
+- target tag/release: <must not exist, or exact existing state to reconcile on resume>
+- tracker/register: <path and SHA256>
+- release lane/marker: <project-defined path/current holder or no marker>
+- evidence: <exact source, tests/CI, candidate path/checksums, gate report; missing checks>
+- commit identity: <owner name and GitHub noreply address>
 
-Commit identity in the fresh clone: <owner name> <<owner GitHub noreply address>>. AI attribution only as a Co-Authored-By trailer.
+Select ONE variant and remove the others:
+Prepare-only: local preparation/build/gate only. Stop after the report. No push, PR,
+merge, tag, draft creation or publication. Do not invoke Finish-Release.ps1.
+PR-only: complete included push/PR/check work, then stop with PR and CI status.
+No merge, tag, draft creation or publication. Do not invoke Finish-Release.ps1.
+Approved workflow: continue only the listed included actions under the original
+approval reference, without repeated phase-only prompts. Recheck required CI,
+reviewed source/merge tree, candidate and draft/published integrity at their gates.
+Use Finish-Release.ps1 only when its entire merge/tag/draft/verify/publish sequence
+is covered; it does not offer a PR-only action selector. In an environment that
+cannot execute an included action, hand off the concrete command, same approval
+reference and evidence to the permitted environment; do not probe denied routes.
 
-Mode: Prepare + Gate only. Tag, draft, publish and settings are outside this prompt. They may be included in a later explicit consolidated approval scope (references/approval-scope.md); mandatory settings/security confirmations remain.
-Candidate goes to: <folder, labeled NOT RELEASED>.
-Stop points: after the gate report; before anything that changes GitHub.
+On drift: inspect changed base/head/effects, preserve other writers and repeat
+affected checks. Ask only for missing/materially changed scope or mandatory host
+confirmation. Failed required checks stop advancement; repair within scope and
+retest. Unknown remote outcomes require reconciliation before retry. At an
+explicit scope boundary, report completion and stop; do not request a broader
+bundle merely because later release phases exist.
 ```
 
-Keep the filled copy with the session records; the receiving agent quotes which expected values it verified.
+Run release gate G0 for release preparation; ordinary edits use the focused Edit workflow.
+Quote verified expected values in the receiving session. Never treat stale green CI,
+a missing gate, an old broad approval or a filled template as current permission.
