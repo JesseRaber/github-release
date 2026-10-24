@@ -39,6 +39,8 @@ class ReleaseChannelTests(unittest.TestCase):
         self.assertEqual(verifier.release_status(rows, 'stable', True, 'v1.0.0')['status'], 'CHANNEL_MISMATCH')
         self.assertEqual(verifier.release_status(rows, 'preview', True, 'v1.0.0')['status'], 'FOUND')
         self.assertEqual(verifier.release_status(rows, 'stable', True, 'v404')['status'], 'NO_TAG_MATCH')
+        for bad_tag in ('', ' ', ' v1.0.0'):
+            self.assertEqual(verifier.release_status(rows, 'stable', True, bad_tag)['status'], 'INCOMPLETE')
 
     def test_drafts_are_distinct_and_never_selected(self):
         rows = [release('v2', True, True), release('v1', False, True)]

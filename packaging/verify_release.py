@@ -44,6 +44,8 @@ def release_status(data, channel, complete=False, tag=None):
     try:
         if channel not in ('stable', 'preview'):
             raise ValueError('explicit stable or preview channel required')
+        if tag is not None and (not isinstance(tag, str) or not tag.strip() or tag != tag.strip()):
+            raise ValueError('exact tag must be nonempty and have no surrounding whitespace')
         if not isinstance(data, list):
             raise ValueError('expected release-list array, not an API error/latest response')
         if any(isinstance(page, list) for page in data) and not all(isinstance(page, list) for page in data):
@@ -80,7 +82,7 @@ def release_status(data, channel, complete=False, tag=None):
         result = dict(channel=channel, requested_tag=tag, selected=None, **counts)
         if not complete:
             return dict(result, status='INCOMPLETE', reason='pagination completeness unconfirmed')
-        if tag:
+        if tag is not None:
             found = [r for _, r in published if r['tag_name'] == tag]
             if not found:
                 status = 'DRAFT_ONLY' if any(r['tag_name'] == tag for r in drafts) else 'NO_TAG_MATCH'
