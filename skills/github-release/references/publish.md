@@ -83,31 +83,31 @@ Prefer `git push` from a real clone. If a connector/API push or a GitHub **web-U
 - Typical flow: feature PR (CI green) → merge → release PR with version bump **and final notes wording** (CI green) → merge → annotated tag on **the PR merge commit** (gate G1c). Any change after the merge — even a one-word notes fix — is a new PR; never commit straight to `main` and tag that.
 
 ```bash
-git tag -a v1.2.0 -m "<skill> v1.2.0" <merge-commit-sha>
-git push origin v1.2.0
+git tag -a v1.3.0 -m "<skill> v1.3.0" <merge-commit-sha>
+git push origin v1.3.0
 ```
 
 ## 3. Draft created → verify
 
-1. Wait for the workflow. Confirm the release is a **draft** (`gh release view v1.2.0 --json isDraft`).
-2. Download every asset: `gh release download v1.2.0 --dir ../draft-1.2.0` (drafts need an authenticated `gh`). `gh release download` uses GraphQL, which some proxies block (observed); fall back to REST, iterating the **release JSON asset list** (not a hand-written list) and asserting the count:
+1. Wait for the workflow. Confirm the release is a **draft** (`gh release view v1.3.0 --json isDraft`).
+2. Download every asset: `gh release download v1.3.0 --dir ../draft-1.3.0` (drafts need an authenticated `gh`). `gh release download` uses GraphQL, which some proxies block (observed); fall back to REST, iterating the **release JSON asset list** (not a hand-written list) and asserting the count:
 
    ```bash
-   gh api repos/<owner>/<repo>/releases --jq '.[] | select(.tag_name=="v1.2.0") | .assets[] | [.id, .name] | @tsv' > ../draft-1.2.0.assets.tsv
+   gh api repos/<owner>/<repo>/releases --jq '.[] | select(.tag_name=="v1.3.0") | .assets[] | [.id, .name] | @tsv' > ../draft-1.3.0.assets.tsv
    while IFS=$'\t' read -r id name; do
-     gh api -H "Accept: application/octet-stream" repos/<owner>/<repo>/releases/assets/$id > "../draft-1.2.0/$name"
-   done < ../draft-1.2.0.assets.tsv
-   test "$(ls ../draft-1.2.0 | wc -l)" -eq "$(wc -l < ../draft-1.2.0.assets.tsv)" && echo "all assets downloaded"
+     gh api -H "Accept: application/octet-stream" repos/<owner>/<repo>/releases/assets/$id > "../draft-1.3.0/$name"
+   done < ../draft-1.3.0.assets.tsv
+   test "$(ls ../draft-1.3.0 | wc -l)" -eq "$(wc -l < ../draft-1.3.0.assets.tsv)" && echo "all assets downloaded"
    ```
 
    `verify_release.py` prints `downloaded N of M listed assets` first; N < M is a download problem, not a release defect (observed false FAIL when a loop skipped `SHA256SUMS.txt`).
 3. Save the draft's metadata. The `releases/tags/` endpoint returns published releases only, so select the draft from the list:
-   `gh api repos/<owner>/<repo>/releases --jq '.[] | select(.tag_name=="v1.2.0")' > ../draft-1.2.0.json`
+   `gh api repos/<owner>/<repo>/releases --jq '.[] | select(.tag_name=="v1.3.0")' > ../draft-1.3.0.json`
 4. Run:
 
 ```bash
-python packaging/verify_release.py --assets ../draft-1.2.0 --release-json ../draft-1.2.0.json \
-    --candidate ../candidate-1.2.0 --version 1.2.0 --notes packaging/RELEASE_NOTES_v1.2.0.md
+python packaging/verify_release.py --assets ../draft-1.3.0 --release-json ../draft-1.3.0.json \
+    --candidate ../candidate-1.3.0 --version 1.3.0 --notes packaging/RELEASE_NOTES_v1.3.0.md
 ```
 
    It also checks that the release was created by `github-actions[bot]` with the title `<skill> v<version>`, and that the body equals the notes file.
@@ -121,7 +121,7 @@ If anything fails: delete the draft (approval), fix, rebuild. If the tag must mo
 Record version, asset list with hashes and passing verify result. If publication is already included and scope/effects are unchanged, continue without a second prompt. Otherwise obtain approval only for publication and its consequences:
 
 ```bash
-gh release edit v1.2.0 --draft=false
+gh release edit v1.3.0 --draft=false
 ```
 
 If the session's publish call is refused (observed from cloud: 403), the owner runs this exact command on their machine; the approval already given covers it unchanged.
@@ -130,7 +130,7 @@ With immutable releases enabled in repository settings, assets and the tag are l
 
 ## 5. After publishing
 
-- Download the published assets again into the project's local release folder and run `verify_release.py --expect-published --notes packaging/RELEASE_NOTES_v1.2.0.md` against the published metadata (`gh api repos/<owner>/<repo>/releases/tags/v1.2.0`), adding `--expect-immutable` when the approval block said ON. The record says which.
+- Download the published assets again into the project's local release folder and run `verify_release.py --expect-published --notes packaging/RELEASE_NOTES_v1.3.0.md` against the published metadata (`gh api repos/<owner>/<repo>/releases/tags/v1.3.0`), adding `--expect-immutable` when the approval block said ON. The record says which.
 - **Release body after publishing.** Assets and tag are locked; the body is not. The only allowed edit is to **append** a dated section `## Known issues (added YYYY-MM-DD)` that names the defect and the fixing version; never rewrite the original text. Log the edit in the release record. `verify_release.py --notes` accepts exactly that shape and FAILs any other difference.
 - Remove the project's "Release in progress" marker (gate G0) after publishing — or after abandoning the release, saying why.
 - Published releases do not update any host. Each named host install needs explicit scope coverage (which may be in the initial bundle) and a separate install-log row ([verify-and-record.md](verify-and-record.md)).

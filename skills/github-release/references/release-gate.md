@@ -32,8 +32,8 @@ Decide by rule, not by asking each time. Name the level and the item that trigge
 
 | Level | When |
 |---|---|
-| **patch** (1.2.0 → 1.2.1) | text and documentation fixes; bug fixes that leave helper output and package layout unchanged |
-| **minor** (1.2.0 → 1.3.0) | a new helper flag or helper; new output lines or columns; changed output meaning; a new gate check or lint that can fail a run that passed before; a package added or removed; a new host |
+| **patch** (1.3.0 → 1.3.1) | text and documentation fixes; bug fixes that leave helper output and package layout unchanged |
+| **minor** (1.3.0 → 1.4.0) | a new helper flag or helper; new output lines or columns; changed output meaning; a new gate check or lint that can fail a run that passed before; a package added or removed; a new host |
 | **major** (1.x → 2.0.0) | a mode or protocol change, or a helper interface that breaks existing callers |
 
 The highest level among the release's changes wins. Owner override is allowed and recorded.
@@ -72,7 +72,7 @@ python -m unittest discover -s tests -v; echo "tests exit=$?"
 Never chain tests and the next step with `;` (observed: a branch was pushed with a failing test because the chained command did not stop). Exit 0 = pass; non-zero = fail, stop. A runner that reports **blocked** (for example exit 2 because PowerShell 7 is not on this agent's PATH) is neither pass nor fail: write `not-run (blocked: <reason>)` and cite the CI job that ran it (template ci.yml runs Windows) as the evidence.
 
 ```bash
-python packaging/build_packages.py ../candidate-1.2.0 --status "local candidate, not published"
+python packaging/build_packages.py ../candidate-1.3.0 --status "local candidate, not published"
 ```
 
 - Output goes to a new folder outside the repository, labeled as a candidate.
