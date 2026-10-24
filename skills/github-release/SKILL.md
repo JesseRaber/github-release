@@ -1,9 +1,9 @@
 ---
 name: github-release
-description: v1.2.0 GitHub Release by Jesse Raber. Make ordinary GitHub repository edits through a focused diff, relevant checks and PR workflow; set up and release Agent Skills with version agreement, a pre-tag gate, host-specific packages, draft-first publishing, asset verification and host install records. Use for repository edits or PR preparation, skill repository setup, preparing or verifying a skill release, choosing a host ZIP, or recording an installation.
+description: v1.3.0 GitHub Release by Jesse Raber. Make ordinary GitHub repository edits through a focused diff, relevant checks and PR workflow; set up and release Agent Skills with version agreement, a pre-tag gate, host-specific packages, draft-first publishing, asset verification and host install records. Use for repository edits or PR preparation, skill repository setup, preparing or verifying a skill release, choosing a host ZIP, or recording an installation.
 license: MIT
 metadata:
-  version: "1.2.0"
+  version: "1.3.0"
   repository: https://github.com/JesseRaber/github-release
 ---
 
@@ -13,11 +13,11 @@ metadata:
 
 Before setup/release preparation, or an edit to ownership/sharing/licensing/promotion, follow [distribution policy](references/distribution-policy.md). Establish the owner-approved audience and rights; keep private work within the owner-selected internal/private audience and authorized accounts/tools and promote public work only within approved scope. Public visibility does not choose a license; never default every project to MIT. Preserve prior grants and third-party notices. This skill's own MIT license is not a license choice for projects it handles.
 
-**Version:** 1.2.0 · **Repository:** https://github.com/JesseRaber/github-release · **Author:** Jesse Raber
+**Version:** 1.3.0 · **Repository:** https://github.com/JesseRaber/github-release · **Author:** Jesse Raber
 
 A release is right the first time when the bytes you tested are the bytes people download, every host gets a package it accepts, and the record says which host has which version and how anyone knows.
 
-Report as: **Loaded GitHub Release v1.2.0 (SKILL.md at <path you loaded>)**. State the mode in the first line. The path lets install checks detect shadow copies and stale channels.
+Report as: **Loaded GitHub Release v1.3.0 (SKILL.md at <path you loaded>)**. State the mode in the first line. The path lets install checks detect shadow copies and stale channels.
 
 ## Choose the mode
 
@@ -25,7 +25,7 @@ Report as: **Loaded GitHub Release v1.2.0 (SKILL.md at <path you loaded>)**. Sta
 |---|---|---|---|
 | **Setup** | "Make a repo for this skill" | Draft the repository layout and files locally | [repo-setup.md](references/repo-setup.md) |
 | **Edit** | "Fix this README / helper / PR; don't release it" | Inspect, edit and check locally; prepare a diff and PR text | [ordinary-edits.md](references/ordinary-edits.md) |
-| **Prepare** | "Get v1.2.0 ready" | Bump versions, write notes, build a local candidate, run checks | [release-gate.md](references/release-gate.md), [packaging.md](references/packaging.md) |
+| **Prepare** | "Get v1.3.0 ready" | Bump versions, write notes, build a local candidate, run checks | [release-gate.md](references/release-gate.md), [packaging.md](references/packaging.md) |
 | **Gate** | "Is it ready to tag?" | Read-only checklist against the exact candidate | [release-gate.md](references/release-gate.md) |
 | **Publish** | "Release it" | Only actions covered by the recorded approval scope; obtain one bundle if needed | [publish.md](references/publish.md) |
 | **Verify** | "Check the release" | Read-only: download assets, compare hashes and contents | [verify-and-record.md](references/verify-and-record.md) |

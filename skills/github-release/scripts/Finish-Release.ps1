@@ -5,7 +5,7 @@
   One confirmation; stops at the first failed check.
 
 .DESCRIPTION
-  GitHub Release v1.2.0 (https://github.com/JesseRaber/github-release), Jesse Raber.
+  GitHub Release v1.3.0 (https://github.com/JesseRaber/github-release), Jesse Raber.
   For steps an agent session cannot perform (merge, tag push, publish). The agent fills in
   every parameter from its gate; the owner runs it once. Each step detects work already done,
   so a re-run after a stop resumes safely. Nothing is retried blindly, deleted, force-pushed
@@ -41,7 +41,7 @@ param(
 )
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-$ScriptVersion = '1.2.0'
+$ScriptVersion = '1.3.0'
 $Tag = "v$Version"
 $receipt = [ordered]@{ script = "Finish-Release.ps1 $ScriptVersion"; repo = $Repo; version = $Version; dryRun = [bool]$DryRun; steps = [ordered]@{}; result = 'STARTED' }
 if ($PSVersionTable.PSVersion.Major -lt 7) { throw 'PowerShell 7 or later is required (run with pwsh).' }

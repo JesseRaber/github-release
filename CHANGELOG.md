@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.3.0
+
+- Preserve scoped approvals and explicit stop points across handoffs; expand decision regressions to twelve cases.
+- Add parser-only shell regression checks with malformed/non-execution controls.
+- Add explicit stable/preview snapshot discovery and exact-tag channel verification without automatic preview upgrades.
+- Document private-edition pilots, rollback and sanitized public contributions.
+
 ## 1.2.0
 
 - Added `scripts/Finish-Release.ps1`: one owner run with a single typed approval merges the release PR, tags the merge commit, waits for the workflow draft, verifies every asset against the gated `SHA256SUMS.txt`, publishes, re-verifies, files the assets. It stops at the first failed check, never overwrites, reconciles completed remote steps and writes a log and JSON receipt.

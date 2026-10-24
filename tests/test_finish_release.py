@@ -64,10 +64,10 @@ function Invoke-GhJson([string[]]$ghArgs, [switch]$AllowNotFound) {
     }
     if ($path -match '^git/ref/heads/') { return [pscustomobject]@{object = [pscustomobject]@{sha = $fixture.merge}} }
     if ($path -match '^git/ref/tags/') { return ApiOptional $path }
-    if ($path -match '^actions/workflows/') { return [pscustomobject]@{workflow_runs = @([pscustomobject]@{id=10;head_sha=$fixture.merge;head_branch='v1.2.0';path='.github/workflows/release.yml';status='completed';conclusion=$fixture.workflow})} }
+    if ($path -match '^actions/workflows/') { return [pscustomobject]@{workflow_runs = @([pscustomobject]@{id=10;head_sha=$fixture.merge;head_branch='v1.3.0';path='.github/workflows/release.yml';status='completed';conclusion=$fixture.workflow})} }
     if ($path -match '^actions/runs') { return [pscustomobject]@{workflow_runs = @()} }
     if ($path -match '^releases/') {
-        return [pscustomobject]@{ id = 1; tag_name = 'v1.2.0'; author = [pscustomobject]@{login='github-actions[bot]'}; name = 'Skill v1.2.0'; prerelease = $false; draft = -not $script:published; body = $fixture.notes; immutable = $fixture.immutable; published_at = 'date'; html_url = 'https://example.invalid'; assets = @([pscustomobject]@{name='a.zip';id=1},[pscustomobject]@{name='SHA256SUMS.txt';id=2}) }
+        return [pscustomobject]@{ id = 1; tag_name = 'v1.3.0'; author = [pscustomobject]@{login='github-actions[bot]'}; name = 'Skill v1.3.0'; prerelease = $false; draft = -not $script:published; body = $fixture.notes; immutable = $fixture.immutable; published_at = 'date'; html_url = 'https://example.invalid'; assets = @([pscustomobject]@{name='a.zip';id=1},[pscustomobject]@{name='SHA256SUMS.txt';id=2}) }
     }
     throw "Unexpected API (no network permitted): $joined"
 }
@@ -105,10 +105,10 @@ class FinishReleaseBehaviorTests(unittest.TestCase):
             self.assertEqual(source.count(marker), 1)
             (d / 'test.ps1').write_text(source.replace(marker, MOCK + '\n' + marker), encoding='utf-8')
             args = [pwsh, '-NoProfile', '-File', str(d / 'test.ps1'), '-Repo', 'o/r',
-                    '-PullRequest', '19', '-Version', '1.2.0', '-TestedHeadSha', HEAD,
+                    '-PullRequest', '19', '-Version', '1.3.0', '-TestedHeadSha', HEAD,
                     '-ExpectedBaseSha', BASE, '-RequiredChecks', 'test',
                     '-ExpectedSums', str(d / 'SHA256SUMS.txt'), '-ExpectedNotes', str(d / 'notes.md'),
-                    '-ReleaseTitle', 'Skill v1.2.0', '-ImmutableReleases', 'ON', '-ExpectedVisibility', 'private',
+                    '-ReleaseTitle', 'Skill v1.3.0', '-ImmutableReleases', 'ON', '-ExpectedVisibility', 'private',
                     '-Yes', '-ApprovalReference', 'offline owner scope fixture']
             if changes.get('dryRun'):
                 args += ['-DryRun']
