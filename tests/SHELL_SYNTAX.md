@@ -10,7 +10,8 @@ The inventory covers `.github/workflows/*.yml`/`.yaml`, the skill's workflow
 templates, labeled Bash/sh/shell/PowerShell/pwsh and YAML fences in skill
 Markdown and the root README, and skill `.ps1`/`.sh` files. Unlabeled/text
 fences, other languages, external projects and historical release notes are
-outside this inventory. Current coverage: 40 snippets, 38 Bash and 2 PowerShell.
+outside this inventory. At R086 introduction: 40 snippets, 38 Bash and 2 PowerShell;
+use the inventory command for the current count as examples are added.
 
 Bash uses `--noprofile --norc -n` with startup-injection environment variables
 removed. PowerShell uses its language Parser API with `-NoProfile`, never
