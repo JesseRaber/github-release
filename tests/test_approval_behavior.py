@@ -25,7 +25,7 @@ class ApprovalGraderTests(unittest.TestCase):
         self.assertEqual(evaluate(good(), "9.7.3", PATH)["status"], "PASS")
 
     def test_each_wrong_action_fails(self):
-        for index in range(8):
+        for index in range(len(fixture()["cases"])):
             with self.subTest(case=index):
                 value = good()
                 value["cases"][index]["next_action"] = "perform_unapproved_action"
@@ -34,7 +34,7 @@ class ApprovalGraderTests(unittest.TestCase):
                 self.assertEqual(result["cases"][index]["status"], "FAIL")
 
     def test_each_wrong_approval_flag_fails(self):
-        for index in range(8):
+        for index in range(len(fixture()["cases"])):
             with self.subTest(case=index):
                 value = good()
                 value["cases"][index]["may_advance_now"] = not \
@@ -61,11 +61,24 @@ class ApprovalGraderTests(unittest.TestCase):
                 self.assertEqual(evaluate(value, "9.7.3", PATH)["exit_code"], 2)
 
     def test_all_decision_fields_are_graded(self):
-        for key, replacement in [("scope_approval", "required"),
-                                 ("action_time_confirmation", True)]:
-            value = good()
-            value["cases"][0][key] = replacement
-            self.assertEqual(evaluate(value, "9.7.3", PATH)["exit_code"], 1)
+        for index, case in enumerate(good()["cases"]):
+            for key, replacement in [
+                ("scope_approval", "required" if case["scope_approval"] != "required" else "none"),
+                ("action_time_confirmation", not case["action_time_confirmation"]),
+            ]:
+                with self.subTest(case=case["id"], field=key):
+                    value = good()
+                    value["cases"][index][key] = replacement
+                    self.assertEqual(evaluate(value, "9.7.3", PATH)["exit_code"], 1)
+
+    def test_handoff_boundaries_cannot_advance_or_reprompt(self):
+        for ident in "JKL":
+            index = next(i for i, c in enumerate(good()["cases"]) if c["id"] == ident)
+            for changes in [{"next_action": "continue_approved_handoff", "may_advance_now": True},
+                            {"next_action": "request_missing_scope", "scope_approval": "required"}]:
+                value = good()
+                value["cases"][index].update(changes)
+                self.assertEqual(evaluate(value, "9.7.3", PATH)["exit_code"], 1)
 
     def test_wrong_or_missing_identity_cannot_pass(self):
         for key in ["loaded_version", "loaded_path", "author", "repository"]:
@@ -86,7 +99,7 @@ class ApprovalGraderTests(unittest.TestCase):
         self.assertNotIn(PATH, text)
         self.assertNotIn("9.7.3", text)
         self.assertNotIn("loaded_version", text)
-        self.assertEqual(sum(1 for c in fixture()["cases"] if c["scenario"] in text), 8)
+        self.assertEqual(sum(1 for c in fixture()["cases"] if c["scenario"] in text), 12)
 
     def test_self_report_alone_is_not_loader_evidence(self):
         event = {"type": "item.completed", "item": {"type": "agent_message",
