@@ -406,6 +406,21 @@ class VerifyReleaseMetadataTests(unittest.TestCase):
         self.assertIn('downloaded 2 of 2 listed assets', r.stdout)
         self.assertIn('release author=github-actions[bot]', r.stdout)
 
+    def test_exact_channel_cli_keeps_asset_and_publication_guards(self):
+        for preview, channel, expected in [(True, 'preview', 0), (False, 'stable', 0),
+                                            (True, 'stable', 1), (None, 'preview', 1)]:
+            with self.subTest(preview=preview, channel=channel):
+                j = self.t / 'channel.json'
+                j.write_text(json.dumps(dict(self.rel, prerelease=preview)), encoding='utf-8')
+                result = run(VR, '--assets', self.assets, '--version', '1.0.0', '--release-json', j,
+                             '--expect-channel', channel, '--expect-published', '--expect-immutable')
+                self.assertEqual(result.returncode, expected, result.stdout)
+        j.write_text(json.dumps(dict(self.rel, prerelease=True, draft=True)), encoding='utf-8')
+        result = run(VR, '--assets', self.assets, '--version', '1.0.0', '--release-json', j,
+                     '--expect-channel', 'preview', '--expect-published')
+        self.assertEqual(result.returncode, 1)
+        self.assertIn('still a draft', result.stdout)
+
     def test_hand_created_or_bad_title_fails(self):
         r = self.verify(author={'login': 'someone'})
         self.assertEqual(r.returncode, 1)

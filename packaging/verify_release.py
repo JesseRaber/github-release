@@ -10,10 +10,15 @@ Usage:
                            [--release-json FILE] [--candidate DIR]
                            [--notes packaging/RELEASE_NOTES_vX.Y.Z.md]
                            [--expected-author github-actions[bot]]
+                           [--expect-channel stable|preview]
+  python verify_release.py --release-list-json FILE --channel stable|preview
+                           [--list-complete] [--tag vX.Y.Z]
 
 Exit 0 when every requested check passed, 1 when any failed, 2 on usage errors.
+Snapshot mode: 0 FOUND, 1 no published match/channel mismatch, 2 INCOMPLETE.
 """
 import argparse
+import datetime
 import hashlib
 import io
 import json
@@ -27,6 +32,79 @@ SUMS = 'SHA256SUMS.txt'
 WORKFLOW_AUTHOR = 'github-actions[bot]'
 LOCAL_EVIDENCE = 'BUILD_EVIDENCE.json'
 KNOWN_ISSUES = re.compile(r'^#{2,3} Known issues \(added \d{4}-\d{2}-\d{2}', re.I)
+
+
+def release_status(data, channel, complete=False, tag=None):
+    """Inspect a captured release-list snapshot, never fetch or upgrade anything.
+
+    Selection means most recently published in the requested channel, not GitHub's
+    manually designated latest or highest semantic version. Exact tags never fall
+    back. Absence applies only to a complete snapshot visible to its source account.
+    """
+    try:
+        if channel not in ('stable', 'preview'):
+            raise ValueError('explicit stable or preview channel required')
+        if tag is not None and (not isinstance(tag, str) or not tag.strip() or tag != tag.strip()):
+            raise ValueError('exact tag must be nonempty and have no surrounding whitespace')
+        if not isinstance(data, list):
+            raise ValueError('expected release-list array, not an API error/latest response')
+        if any(isinstance(page, list) for page in data) and not all(isinstance(page, list) for page in data):
+            raise ValueError('mixed pages and release entries')
+        rows = []
+        for page in data:
+            if isinstance(page, list):
+                rows.extend(page)
+            else:
+                rows.append(page)
+        seen, published, drafts = set(), [], []
+        for row in rows:
+            if not isinstance(row, dict):
+                raise ValueError('invalid release-list entry')
+            name = row.get('tag_name')
+            if not isinstance(name, str) or not name.strip() or name in seen:
+                raise ValueError('missing or duplicate release tag')
+            seen.add(name)
+            if type(row.get('draft')) is not bool or type(row.get('prerelease')) is not bool:
+                raise ValueError('draft/prerelease state must be explicit booleans')
+            if row['draft']:
+                drafts.append(row)
+                continue
+            stamp = row.get('published_at')
+            if not isinstance(stamp, str):
+                raise ValueError('published release missing published_at')
+            date = datetime.datetime.fromisoformat(stamp.replace('Z', '+00:00'))
+            if date.utcoffset() is None:
+                raise ValueError('published_at needs timezone')
+            published.append((date, row))
+        counts = {'published_stable': sum(not r['prerelease'] for _, r in published),
+                  'published_preview': sum(r['prerelease'] for _, r in published),
+                  'drafts': len(drafts)}
+        result = dict(channel=channel, requested_tag=tag, selected=None, **counts)
+        if not complete:
+            return dict(result, status='INCOMPLETE', reason='pagination completeness unconfirmed')
+        if tag is not None:
+            found = [r for _, r in published if r['tag_name'] == tag]
+            if not found:
+                status = 'DRAFT_ONLY' if any(r['tag_name'] == tag for r in drafts) else 'NO_TAG_MATCH'
+                return dict(result, status=status)
+            if found[0]['prerelease'] != (channel == 'preview'):
+                return dict(result, status='CHANNEL_MISMATCH')
+            selected = found[0]
+        else:
+            matches = [(dt, r) for dt, r in published if r['prerelease'] == (channel == 'preview')]
+            if not matches:
+                status = 'NO_PUBLISHED_RELEASE' if not published else 'NO_' + channel.upper() + '_RELEASE'
+                return dict(result, status=status)
+            latest = max(dt for dt, _ in matches)
+            candidates = [r for dt, r in matches if dt == latest]
+            if len(candidates) != 1:
+                return dict(result, status='INCOMPLETE', reason='publication-time tie; select an exact tag')
+            selected = candidates[0]
+        return dict(result, status='FOUND', selected={k: selected[k] for k in
+                    ('tag_name', 'draft', 'prerelease', 'published_at')})
+    except (ValueError, TypeError, OverflowError) as exc:
+        return {'status': 'INCOMPLETE', 'channel': channel, 'requested_tag': tag,
+                'selected': None, 'reason': str(exc)}
 
 
 def safe_stdout():
@@ -192,12 +270,17 @@ def check_body(data, notes_path, out):
 
 
 def check_release_json(data, assets, version, out, expect_published=False, expect_immutable=False,
-                       allow_missing_digest=False):
+                       allow_missing_digest=False, expect_channel=None):
     tag = data.get('tag_name')
     if version and tag != 'v' + version:
         out.append(('FAIL', 'release tag %r is not v%s' % (tag, version)))
     out.append(('INFO', 'release %s draft=%s prerelease=%s immutable=%s' % (
         tag, data.get('draft'), data.get('prerelease'), data.get('immutable'))))
+    if expect_channel:
+        known = type(data.get('prerelease')) is bool
+        matches = known and data['prerelease'] == (expect_channel == 'preview')
+        out.append(('PASS' if matches else 'FAIL', 'expected %s channel; prerelease=%r' %
+                    (expect_channel, data.get('prerelease'))))
     if expect_published and data.get('draft') is not False:
         out.append(('FAIL', 'release is still a draft (or draft state unknown)'))
     if expect_immutable and data.get('immutable') is not True:
@@ -260,6 +343,12 @@ def main(argv=None):
     ap.add_argument('--assets')
     ap.add_argument('--version', dest='release_version')
     ap.add_argument('--release-json')
+    ap.add_argument('--expect-channel', choices=['stable', 'preview'],
+                    help='exact-tag asset verification channel (requires --version and --release-json)')
+    ap.add_argument('--release-list-json', help='read-only release-list snapshot mode; no asset verification')
+    ap.add_argument('--channel', choices=['stable', 'preview'], help='snapshot channel; never falls back')
+    ap.add_argument('--tag', help='exact snapshot tag, including v prefix; never falls back')
+    ap.add_argument('--list-complete', action='store_true', help='all pages captured; not proof of live freshness/access')
     ap.add_argument('--candidate')
     ap.add_argument('--allow-missing-github-digest', action='store_true',
                     help='explicitly accept size-only GitHub checks; local checksums still required')
@@ -274,6 +363,26 @@ def main(argv=None):
         print('verify_release ' + __version__)
         return 0
     args = ap.parse_args(argv)
+    if args.release_list_json:
+        if (not args.channel or args.assets or args.release_json or args.release_version or
+                args.expect_channel or args.candidate or args.notes or args.expect_published or
+                args.expect_immutable or args.allow_missing_github_digest or
+                args.expected_author != WORKFLOW_AUTHOR):
+            print('snapshot mode needs --channel and cannot be mixed with asset verification')
+            return 2
+        try:
+            data = json.loads(Path(args.release_list_json).read_text(encoding='utf-8-sig'))
+            result = release_status(data, args.channel, args.list_complete, args.tag)
+        except (OSError, UnicodeError, ValueError) as exc:
+            result = {'status': 'INCOMPLETE', 'reason': str(exc)}
+        print(json.dumps(result, indent=2))
+        return 0 if result['status'] == 'FOUND' else (2 if result['status'] == 'INCOMPLETE' else 1)
+    if args.channel or args.tag or args.list_complete:
+        print('snapshot options need --release-list-json')
+        return 2
+    if args.expect_channel and (not args.release_json or not args.release_version):
+        print('--expect-channel needs --release-json and --version for exact-tag verification')
+        return 2
     if not args.assets:
         print('need --assets DIR')
         return 2
@@ -298,7 +407,8 @@ def main(argv=None):
     ran = ['checksums', 'zip integrity']
     if data is not None:
         check_release_json(data, assets, args.release_version, out,
-                           args.expect_published, args.expect_immutable, args.allow_missing_github_digest)
+                           args.expect_published, args.expect_immutable, args.allow_missing_github_digest,
+                           args.expect_channel)
         check_identity(data, args.release_version, args.expected_author, out)
         ran.append('GitHub metadata')
         ran.append('author/title')

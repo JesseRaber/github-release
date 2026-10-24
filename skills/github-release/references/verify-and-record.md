@@ -2,6 +2,48 @@
 
 ## Verify
 
+### Choose stable, preview, or an exact tag before discovery
+
+Record the repository/account, intended channel and optional exact tag before
+checking status or proposing an install. GitHub's latest endpoint excludes drafts
+and prereleases ([official API](https://docs.github.com/en/rest/releases/releases#get-the-latest-release),
+checked 2026-10-24). A latest 404 does not establish that no published release
+exists; it can also reflect account/access problems. Do not switch a stable
+installation to preview merely because a preview is newer.
+
+Use a successfully fetched, paginated release list for channel discovery:
+
+```bash
+gh api --paginate --slurp 'repos/<owner>/<repo>/releases?per_page=100' > releases.json
+python packaging/verify_release.py --release-list-json releases.json --channel stable --list-complete
+```
+
+Check the API exit status before asserting `--list-complete`; preserve the source
+repository/account and observation time beside the snapshot, never credentials.
+The helper itself is offline/read-only. `--channel preview` deliberately selects
+preview instead. `--tag vX.Y.Z` requires that exact tag and selected channel,
+without fallback. Selection is most recent `published_at` in the chosen channel,
+not semantic-version ordering or GitHub's manually designated latest. Publication
+time ties require an exact tag. No command here installs or upgrades anything.
+
+Snapshot exit 0/FOUND means a published match was observed, not that assets pass.
+Exit 1 distinguishes NO_STABLE_RELEASE, NO_PREVIEW_RELEASE, NO_PUBLISHED_RELEASE,
+NO_TAG_MATCH, DRAFT_ONLY and CHANNEL_MISMATCH. Counts expose published previews
+even when no stable match exists. Exit 2/INCOMPLETE covers missing pagination
+confirmation, API-error objects (including 404/403), malformed/unknown state,
+duplicate tags or ambiguous snapshots. Absence is only within the source
+account's complete captured view; completeness is not proof of current live
+state, authorization or inaccessible private releases.
+
+For a chosen release, read its exact tag endpoint, download the listed assets and
+verify them with `--version X.Y.Z --release-json exact-tag.json --expect-channel
+stable` (or `preview`), plus the existing published/immutable/notes/candidate
+options appropriate to the check. The channel guard requires exact-tag/version
+metadata and explicit `prerelease` state; it never infers channel from a tag
+suffix. Snapshot mode cannot be mixed with asset verification. Recheck exact-tag
+state at installation time. Finish-Release.ps1 remains stable-only: read-only
+preview verification does not authorize or add preview publication support.
+
 `scripts/verify_release.py` checks, without network:
 
 | Check | Fails when |
@@ -13,6 +55,7 @@
 | Author and title (`--release-json`) | the release was not created by `github-actions[bot]` (override with `--expected-author`), or its title does not end with ` v<version>` |
 | Notes body (`--notes FILE`) | the release body differs from the notes file, except for one appended `## Known issues (added YYYY-MM-DD)` section (publish.md section 5) |
 | Release state (`--expect-published`, `--expect-immutable`) | after publishing: the release is still a draft, or not immutable. Pass `--expect-immutable` whenever the repository setting is ON (publish approval block); the record says ON or OFF |
+| Channel (`--expect-channel stable` or `preview`) | exact-tag metadata has the wrong or unknown `prerelease` state; needs `--version` and `--release-json` |
 | Candidate (`--candidate`) | the candidate directory or its build evidence is missing; its checksums or evidence are invalid; its manifest differs; or an archive is not byte-identical |
 | ZIP integrity | `testzip` fails or members are duplicated |
 
