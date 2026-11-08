@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.1
+
+- Add compact, evidence-based learning guidance for authorized release work.
+- Keep lessons in existing project records, skip duplicates and speculation, and preserve required quality checks.
+- Promote supported lessons only through validated source updates; no automatic retraining, release or installation.
+
 ## 1.3.0
 
 - Preserve scoped approvals and explicit stop points across handoffs; expand decision regressions to twelve cases.
