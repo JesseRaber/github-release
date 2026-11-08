@@ -38,6 +38,7 @@ flowchart LR
 - Gate first, tag second. The release workflow creates a **draft**; the draft's assets are verified against the local candidate before publication proceeds within the approved scope.
 - Published bytes are never replaced. A defect ships as a new patch version.
 - Every host rule carries a date and a source.
+- Capture new, actionable lessons from actual release work in existing project records, with evidence and scope. Skip duplicate or speculative findings; required checks come first. See [learning from actual use](skills/github-release/SKILL.md#learning-from-actual-use).
 
 ## Layout
 
